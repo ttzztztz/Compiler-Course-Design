@@ -1,3 +1,5 @@
+#define register 
+
 #include "stdio.h"
 #include "stdlib.h"
 #include "string.h"
@@ -68,14 +70,14 @@ struct symboltable
 {
     struct symbol symbols[MAXLENGTH];
     int index;
-} symbolTable;
+};
 
 struct symbol_scope_begin
 {
     //当前作用域的符号在符号表的起始位置序号,这是一个栈结构,当使用顺序表作为符号表时，进入、退出一个作用域时需要对其操作，以完成符号表的管理。对其它形式的符号表，不一定需要此数据结构
     int TX[30];
     int top;
-} symbol_scope_TX;
+};
 
 struct ASTNode *mknode(int num, int kind, int pos, ...);
 void semantic_Analysis0(struct ASTNode *T);

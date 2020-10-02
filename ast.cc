@@ -19,6 +19,7 @@ struct ASTNode *mknode(int num, int kind, int pos, ...)
 
 void display(struct ASTNode *T, int indent)
 { //对抽象语法树的先根遍历
+
     int i = 1;
     struct ASTNode *T0;
     if (T)
