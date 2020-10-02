@@ -1,2 +1,5 @@
 .DS_Store
 parser
+lex.yy.c
+parser.tab.c
+/.vscode
