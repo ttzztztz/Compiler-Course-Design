@@ -1,0 +1,1 @@
+gcc -o parser lex.yy.c parser.tab.c

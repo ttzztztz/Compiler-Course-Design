@@ -1,0 +1,1 @@
+rm ./*.tab.c ./*.yy.c ./*.tab.h

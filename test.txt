@@ -1,0 +1,6 @@
+int a, b;
+
+int fn(int c, int d) { 
+    int middle = c * d;
+    return middle / (c + d);
+}
