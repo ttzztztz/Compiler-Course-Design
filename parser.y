@@ -27,7 +27,7 @@ int yylex();
 %token <type_float> FLOAT
 
 %token DPLUS LP RP LC RC SEMI COMMA
-%token PLUS MINUS STAR DIV ASSIGNOP AND OR NOT IF ELSE WHILE RETURN FOR SWITCH CASE COLON DEFAULT
+%token PLUS MINUS STAR DIV MOD ASSIGNOP AND OR NOT IF ELSE WHILE RETURN FOR SWITCH CASE COLON DEFAULT
 %token EXT_DEF_LIST EXT_VAR_DEF FUNC_DEF FUNC_DEC EXT_DEC_LIST PARAM_LIST PARAM_DEC VAR_DEF DEC_LIST DEF_LIST COMP_STM STM_LIST EXP_STMT IF_THEN IF_THEN_ELSE
 %token FUNC_CALL ARGS FUNCTION PARAM ARG CALL LABEL GOTO JLT JLE JGT JGE EQ NEQ
 
@@ -38,6 +38,7 @@ int yylex();
 %left RELOP
 %left PLUS MINUS
 %left STAR DIV
+%left MOD
 %right UMINUS NOT DPLUS
 
 %nonassoc LOWER_THEN_ELSE
@@ -102,6 +103,7 @@ Exp:    Exp ASSIGNOP Exp {$$=mknode(2,ASSIGNOP,yylineno,$1,$3);strcpy($$->type_i
       | Exp PLUS Exp  {$$=mknode(2,PLUS,yylineno,$1,$3);strcpy($$->type_id,"PLUS");}
       | Exp MINUS Exp {$$=mknode(2,MINUS,yylineno,$1,$3);strcpy($$->type_id,"MINUS");}
       | Exp STAR Exp  {$$=mknode(2,STAR,yylineno,$1,$3);strcpy($$->type_id,"STAR");}
+      | Exp MOD Exp  {$$=mknode(2,MOD,yylineno,$1,$3);strcpy($$->type_id,"MOD");}
       | Exp DIV Exp   {$$=mknode(2,DIV,yylineno,$1,$3);strcpy($$->type_id,"DIV");}
       | LP Exp RP     {$$=$2;}
       | MINUS Exp %prec UMINUS   {$$=mknode(1,UMINUS,yylineno,$2);strcpy($$->type_id,"UMINUS");}
@@ -121,11 +123,11 @@ Args:    Exp COMMA Args    {$$=mknode(2,ARGS,yylineno,$1,$3);}
 %%
 
 int main(int argc, char *argv[]) {
-	yyin = fopen(argv[1], "r");
-	if (!yyin) exit(0);
-	yylineno = 1;
-	yyparse();
-	return 0;
+    yyin = fopen(argv[1], "r");
+    if (!yyin) exit(0);
+    yylineno = 1;
+    yyparse();
+    return 0;
 }
 
 #include<stdarg.h>
