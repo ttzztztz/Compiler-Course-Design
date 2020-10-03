@@ -147,6 +147,7 @@ void display(struct ASTNode *T, int indent)
         case PLUS:
         case MINUS:
         case STAR:
+        case MOD:
         case DIV:
             printf("%*c%s\n", indent, ' ', T->type_id);
             display(T->ptr[0], indent + 2);
@@ -175,8 +176,4 @@ void display(struct ASTNode *T, int indent)
             break;
         }
     }
-}
-
-void semantic_Analysis0(struct ASTNode *T) {
-    return;
 }

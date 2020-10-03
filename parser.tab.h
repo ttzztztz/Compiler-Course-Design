@@ -70,50 +70,51 @@ extern int yydebug;
     MINUS = 271,                   /* MINUS  */
     STAR = 272,                    /* STAR  */
     DIV = 273,                     /* DIV  */
-    ASSIGNOP = 274,                /* ASSIGNOP  */
-    AND = 275,                     /* AND  */
-    OR = 276,                      /* OR  */
-    NOT = 277,                     /* NOT  */
-    IF = 278,                      /* IF  */
-    ELSE = 279,                    /* ELSE  */
-    WHILE = 280,                   /* WHILE  */
-    RETURN = 281,                  /* RETURN  */
-    FOR = 282,                     /* FOR  */
-    SWITCH = 283,                  /* SWITCH  */
-    CASE = 284,                    /* CASE  */
-    COLON = 285,                   /* COLON  */
-    DEFAULT = 286,                 /* DEFAULT  */
-    EXT_DEF_LIST = 287,            /* EXT_DEF_LIST  */
-    EXT_VAR_DEF = 288,             /* EXT_VAR_DEF  */
-    FUNC_DEF = 289,                /* FUNC_DEF  */
-    FUNC_DEC = 290,                /* FUNC_DEC  */
-    EXT_DEC_LIST = 291,            /* EXT_DEC_LIST  */
-    PARAM_LIST = 292,              /* PARAM_LIST  */
-    PARAM_DEC = 293,               /* PARAM_DEC  */
-    VAR_DEF = 294,                 /* VAR_DEF  */
-    DEC_LIST = 295,                /* DEC_LIST  */
-    DEF_LIST = 296,                /* DEF_LIST  */
-    COMP_STM = 297,                /* COMP_STM  */
-    STM_LIST = 298,                /* STM_LIST  */
-    EXP_STMT = 299,                /* EXP_STMT  */
-    IF_THEN = 300,                 /* IF_THEN  */
-    IF_THEN_ELSE = 301,            /* IF_THEN_ELSE  */
-    FUNC_CALL = 302,               /* FUNC_CALL  */
-    ARGS = 303,                    /* ARGS  */
-    FUNCTION = 304,                /* FUNCTION  */
-    PARAM = 305,                   /* PARAM  */
-    ARG = 306,                     /* ARG  */
-    CALL = 307,                    /* CALL  */
-    LABEL = 308,                   /* LABEL  */
-    GOTO = 309,                    /* GOTO  */
-    JLT = 310,                     /* JLT  */
-    JLE = 311,                     /* JLE  */
-    JGT = 312,                     /* JGT  */
-    JGE = 313,                     /* JGE  */
-    EQ = 314,                      /* EQ  */
-    NEQ = 315,                     /* NEQ  */
-    UMINUS = 316,                  /* UMINUS  */
-    LOWER_THEN_ELSE = 317          /* LOWER_THEN_ELSE  */
+    MOD = 274,                     /* MOD  */
+    ASSIGNOP = 275,                /* ASSIGNOP  */
+    AND = 276,                     /* AND  */
+    OR = 277,                      /* OR  */
+    NOT = 278,                     /* NOT  */
+    IF = 279,                      /* IF  */
+    ELSE = 280,                    /* ELSE  */
+    WHILE = 281,                   /* WHILE  */
+    RETURN = 282,                  /* RETURN  */
+    FOR = 283,                     /* FOR  */
+    SWITCH = 284,                  /* SWITCH  */
+    CASE = 285,                    /* CASE  */
+    COLON = 286,                   /* COLON  */
+    DEFAULT = 287,                 /* DEFAULT  */
+    EXT_DEF_LIST = 288,            /* EXT_DEF_LIST  */
+    EXT_VAR_DEF = 289,             /* EXT_VAR_DEF  */
+    FUNC_DEF = 290,                /* FUNC_DEF  */
+    FUNC_DEC = 291,                /* FUNC_DEC  */
+    EXT_DEC_LIST = 292,            /* EXT_DEC_LIST  */
+    PARAM_LIST = 293,              /* PARAM_LIST  */
+    PARAM_DEC = 294,               /* PARAM_DEC  */
+    VAR_DEF = 295,                 /* VAR_DEF  */
+    DEC_LIST = 296,                /* DEC_LIST  */
+    DEF_LIST = 297,                /* DEF_LIST  */
+    COMP_STM = 298,                /* COMP_STM  */
+    STM_LIST = 299,                /* STM_LIST  */
+    EXP_STMT = 300,                /* EXP_STMT  */
+    IF_THEN = 301,                 /* IF_THEN  */
+    IF_THEN_ELSE = 302,            /* IF_THEN_ELSE  */
+    FUNC_CALL = 303,               /* FUNC_CALL  */
+    ARGS = 304,                    /* ARGS  */
+    FUNCTION = 305,                /* FUNCTION  */
+    PARAM = 306,                   /* PARAM  */
+    ARG = 307,                     /* ARG  */
+    CALL = 308,                    /* CALL  */
+    LABEL = 309,                   /* LABEL  */
+    GOTO = 310,                    /* GOTO  */
+    JLT = 311,                     /* JLT  */
+    JLE = 312,                     /* JLE  */
+    JGT = 313,                     /* JGT  */
+    JGE = 314,                     /* JGE  */
+    EQ = 315,                      /* EQ  */
+    NEQ = 316,                     /* NEQ  */
+    UMINUS = 317,                  /* UMINUS  */
+    LOWER_THEN_ELSE = 318          /* LOWER_THEN_ELSE  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -129,7 +130,7 @@ union YYSTYPE
 	char   type_id[32];
 	struct ASTNode *ptr;
 
-#line 133 "parser.tab.h"
+#line 134 "parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

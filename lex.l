@@ -39,6 +39,7 @@ float  ([0-9]*\.[0-9]+)|([0-9]+\.)
 "+"			{return PLUS;}
 "-"			{return MINUS;}
 "*"			{return STAR;}
+"%"			{return MOD;}
 "/"			{return DIV;}
 "&&"        {return AND;}
 "||"        {return OR;}
