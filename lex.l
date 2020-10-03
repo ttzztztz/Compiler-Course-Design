@@ -22,8 +22,9 @@ float  ([0-9]*\.[0-9]+)|([0-9]+\.)
 %%
 {int}        {yylval.type_int=atoi(yytext); return INT;}
 {float}      {yylval.type_float=atof(yytext); return FLOAT;}
-"int"        {strcpy(yylval.type_id,  yytext);return TYPE;}
-"float"      {strcpy(yylval.type_id,  yytext);return TYPE;}
+"int"        {strcpy(yylval.type_id, yytext);return TYPE;}
+"float"      {strcpy(yylval.type_id, yytext);return TYPE;}
+"i32"        {strcpy(yylval.type_id, yytext);return TYPE;}
 
 "return"     {return RETURN;}
 "if"         {return IF;}
@@ -39,8 +40,8 @@ float  ([0-9]*\.[0-9]+)|([0-9]+\.)
 "-"			{return MINUS;}
 "*"			{return STAR;}
 "/"			{return DIV;}
-"&&"         {return AND;}
-"||"            {return OR;}
+"&&"        {return AND;}
+"||"        {return OR;}
 "!"			{return NOT;}
 "("			{return LP;}
 ")"			{return RP;}
