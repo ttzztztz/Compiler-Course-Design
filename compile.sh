@@ -1,1 +1,1 @@
-g++ -o parser lex.yy.cc parser.tab.cc ast.cc analysis.cc -std=c++2a
+g++ -O3 -o parser lex.yy.cc parser.tab.cc ast.cc analysis.cc `llvm-config --cxxflags --ldflags --system-libs --libs core` -std=c++2a

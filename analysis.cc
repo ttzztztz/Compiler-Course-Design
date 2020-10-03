@@ -1,7 +1,20 @@
+#include "llvm/ADT/APFloat.h"
+#include "llvm/ADT/STLExtras.h"
+#include "llvm/IR/BasicBlock.h"
+#include "llvm/IR/Constants.h"
+#include "llvm/IR/DerivedTypes.h"
+#include "llvm/IR/Function.h"
+#include "llvm/IR/IRBuilder.h"
+#include "llvm/IR/LLVMContext.h"
+#include "llvm/IR/Module.h"
+#include "llvm/IR/Type.h"
+#include "llvm/IR/Verifier.h"
+
 #include "def.h"
 #include "string"
 
 using std::string;
+using namespace llvm;
 
 struct symboltable
 {
@@ -17,7 +30,7 @@ struct symbol_scope_begin
 
 string newAlias()
 {
-    static int no=1;
+    static int no = 1;
     return "v" + std::to_string(no++);
 }
 
@@ -89,13 +102,78 @@ struct codenode *merge(int num, ...)
 
 void prnIR(struct codenode *head)
 {
-    // todo
+    LLVMContext TheContext;
+    IRBuilder<> Builder(TheContext);
+
+    struct codenode *cur = head;
+    do
+    {
+        // switch (cur->op)
+        // {
+        // case ASSIGNOP:
+        //     printf("  %s := %s\n", resultstr, opnstr1);
+        //     break;
+        // case PLUS:
+        // case MINUS:
+        // case STAR:
+        // case DIV:
+        //     printf("  %s := %s %c %s\n", resultstr, opnstr1,
+        //            h->op == PLUS ? '+' : h->op == MINUS ? '-' : h->op == STAR ? '*' : '\\', opnstr2);
+        //     break;
+        // case FUNCTION:
+        //     printf("\nFUNCTION %s :\n", h->result.id);
+        //     break;
+        // case PARAM:
+        //     printf("  PARAM %s\n", h->result.id);
+        //     break;
+        // case LABEL:
+        //     printf("LABEL %s :\n", h->result.id);
+        //     break;
+        // case GOTO:
+        //     printf("  GOTO %s\n", h->result.id);
+        //     break;
+        // case JLE:
+        //     printf("  IF %s <= %s GOTO %s\n", opnstr1, opnstr2, resultstr);
+        //     break;
+        // case JLT:
+        //     printf("  IF %s < %s GOTO %s\n", opnstr1, opnstr2, resultstr);
+        //     break;
+        // case JGE:
+        //     printf("  IF %s >= %s GOTO %s\n", opnstr1, opnstr2, resultstr);
+        //     break;
+        // case JGT:
+        //     printf("  IF %s > %s GOTO %s\n", opnstr1, opnstr2, resultstr);
+        //     break;
+        // case EQ:
+        //     printf("  IF %s == %s GOTO %s\n", opnstr1, opnstr2, resultstr);
+        //     break;
+        // case NEQ:
+        //     printf("  IF %s != %s GOTO %s\n", opnstr1, opnstr2, resultstr);
+        //     break;
+        // case ARG:
+        //     printf("  ARG %s\n", h->result.id);
+        //     break;
+        // case CALL:
+        //     if (!strcmp(opnstr1, "write"))
+        //         printf("  CALL  %s\n", opnstr1);
+        //     else
+        //         printf("  %s := CALL %s\n", resultstr, opnstr1);
+        //     break;
+        // case RETURN:
+        //     if (h->result.kind)
+        //         printf("  RETURN %s\n", resultstr);
+        //     else
+        //         printf("  RETURN\n");
+        //     break;
+        // }
+    } while (cur != head);
 }
 
-void semantic_error(int line, const string& msg1, const string& msg2)
+void semantic_error(int line, const string &msg1, const string &msg2)
 {
-    printf("Line %d Message: %s %s\n", line, msg1, msg2.c_str());
+    printf("Line %d Message: %s %s\n", line, msg1.c_str(), msg2.c_str());
 }
+
 void prn_symbol()
 {
     int i = 0;
@@ -116,7 +194,7 @@ int searchSymbolTable(char *name)
     return -1;
 }
 
-int fillSymbolTable(const string& name, const string& alias, int level, int type, char flag, int offset)
+int fillSymbolTable(const string &name, const string &alias, int level, int type, char flag, int offset)
 {
     int i;
     for (i = symbolTable.index - 1; i >= 0 && (symbolTable.symbols[i].level == level || level == 0); i--)
@@ -135,7 +213,7 @@ int fillSymbolTable(const string& name, const string& alias, int level, int type
     return symbolTable.index++;
 }
 
-int fill_Temp(const string& name, int level, int type, char flag, int offset)
+int fill_Temp(const string &name, int level, int type, char flag, int offset)
 {
     strcpy(symbolTable.symbols[symbolTable.index].name, "");
     strcpy(symbolTable.symbols[symbolTable.index].alias, name.c_str());
@@ -147,7 +225,7 @@ int fill_Temp(const string& name, int level, int type, char flag, int offset)
 }
 
 int LEV = 0;
-int func_size; 
+int func_size;
 
 void ext_var_list(struct ASTNode *T)
 {
@@ -395,7 +473,7 @@ void Exp(struct ASTNode *T)
             break;
         case UMINUS: // todo
             break;
-        case FUNC_CALL: 
+        case FUNC_CALL:
             rtn = searchSymbolTable(T->type_id);
             if (rtn == -1)
             {
@@ -408,7 +486,7 @@ void Exp(struct ASTNode *T)
                 break;
             }
             T->type = symbolTable.symbols[rtn].type;
-            width = T->type == INT ? 4 : 8; 
+            width = T->type == INT ? 4 : 8;
             if (T->ptr[0])
             {
                 T->ptr[0]->offset = T->offset;
@@ -458,7 +536,7 @@ void Exp(struct ASTNode *T)
 }
 
 void semantic_Analysis(struct ASTNode *T)
-{ 
+{
     int rtn, num, width;
     struct ASTNode *T0;
     struct opn opn1, opn2, result;
@@ -481,21 +559,21 @@ void semantic_Analysis(struct ASTNode *T)
             break;
         case EXT_VAR_DEF:
             T->type = T->ptr[1]->type = !strcmp(T->ptr[0]->type_id, "int") ? INT : FLOAT;
-            T->ptr[1]->offset = T->offset; 
+            T->ptr[1]->offset = T->offset;
             T->ptr[1]->width = T->type == INT ? 4 : 8;
-            ext_var_list(T->ptr[1]); 
+            ext_var_list(T->ptr[1]);
             T->width = (T->type == INT ? 4 : 8) * T->ptr[1]->num;
             T->code = NULL;
             break;
         case FUNC_DEF:
-            T->ptr[1]->type = !strcmp(T->ptr[0]->type_id, "int") ? INT : FLOAT; 
+            T->ptr[1]->type = !strcmp(T->ptr[0]->type_id, "int") ? INT : FLOAT;
             T->width = 0;
             T->offset = DX;
             semantic_Analysis(T->ptr[1]);
             T->offset += T->ptr[1]->width;
             T->ptr[2]->offset = T->offset;
             strcpy(T->ptr[2]->Snext, newLabel().c_str());
-            semantic_Analysis(T->ptr[2]); 
+            semantic_Analysis(T->ptr[2]);
             symbolTable.symbols[T->ptr[1]->place].offset = T->offset + T->ptr[2]->width;
             T->code = merge(3, T->ptr[1]->code, T->ptr[2]->code, genLabel(T->ptr[2]->Snext));
             break;
@@ -531,7 +609,7 @@ void semantic_Analysis(struct ASTNode *T)
             {
                 T->ptr[1]->offset = T->offset + T->ptr[0]->width;
                 semantic_Analysis(T->ptr[1]);
-                T->num = T->ptr[0]->num + T->ptr[1]->num; 
+                T->num = T->ptr[0]->num + T->ptr[1]->num;
                 T->width = T->ptr[0]->width + T->ptr[1]->width;
                 T->code = merge(2, T->ptr[0]->code, T->ptr[1]->code);
             }
@@ -661,14 +739,14 @@ void semantic_Analysis(struct ASTNode *T)
             if (T->ptr[1])
             {
                 strcpy(T->ptr[1]->Snext, T->Snext);
-                T->ptr[1]->offset = T->offset; 
+                T->ptr[1]->offset = T->offset;
                 semantic_Analysis(T->ptr[1]);
                 if (T->ptr[0]->kind == RETURN || T->ptr[0]->kind == EXP_STMT || T->ptr[0]->kind == COMP_STM)
                     T->code = merge(2, T->code, T->ptr[1]->code);
                 else
                     T->code = merge(3, T->code, genLabel(T->ptr[0]->Snext), T->ptr[1]->code);
                 if (T->ptr[1]->width > T->width)
-                    T->width = T->ptr[1]->width; 
+                    T->width = T->ptr[1]->width;
             }
             break;
         case IF_THEN:
