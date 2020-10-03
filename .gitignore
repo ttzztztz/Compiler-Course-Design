@@ -4,3 +4,5 @@ lex.yy.c
 parser.tab.c
 /.devcontainer
 toy
+demo
+/.vscode/settings.json
