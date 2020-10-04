@@ -100,73 +100,50 @@ struct codenode *merge(int num, ...)
     return h1;
 }
 
-void prnIR(struct codenode *head)
+void print_lr(struct codenode *head)
 {
     LLVMContext TheContext;
     IRBuilder<> Builder(TheContext);
+    Module TheModule("code", TheContext);
 
-    struct codenode *cur = head;
+    std::vector<Type *> parameters(2, Type::getInt32Ty(TheContext));
+    FunctionType *FT = FunctionType::get(Type::getVoidTy(TheContext), parameters, false);
+    Function *F = Function::Create(FT, Function::ExternalLinkage, "add_fn", TheModule);
+
+    Value *l = nullptr, *r = nullptr;
+    int Idx = 0;
+    for (auto &Arg : F->args()) {
+        Arg.setName(string{ char('a' + Idx) });
+
+        if (Idx == 0) l = &Arg;
+        else r = &Arg;
+
+        Idx++;
+    }
+
+    BasicBlock *block = BasicBlock::Create(TheContext, "entry", F);
+    IRBuilder<> functionBuilder(block);
+
+    struct codenode *h = head;
     do
     {
-        // switch (cur->op)
-        // {
-        // case ASSIGNOP:
-        //     printf("  %s := %s\n", resultstr, opnstr1);
-        //     break;
-        // case PLUS:
-        // case MINUS:
-        // case STAR:
-        // case DIV:
-        //     printf("  %s := %s %c %s\n", resultstr, opnstr1,
-        //            h->op == PLUS ? '+' : h->op == MINUS ? '-' : h->op == STAR ? '*' : '\\', opnstr2);
-        //     break;
-        // case FUNCTION:
-        //     printf("\nFUNCTION %s :\n", h->result.id);
-        //     break;
-        // case PARAM:
-        //     printf("  PARAM %s\n", h->result.id);
-        //     break;
-        // case LABEL:
-        //     printf("LABEL %s :\n", h->result.id);
-        //     break;
-        // case GOTO:
-        //     printf("  GOTO %s\n", h->result.id);
-        //     break;
-        // case JLE:
-        //     printf("  IF %s <= %s GOTO %s\n", opnstr1, opnstr2, resultstr);
-        //     break;
-        // case JLT:
-        //     printf("  IF %s < %s GOTO %s\n", opnstr1, opnstr2, resultstr);
-        //     break;
-        // case JGE:
-        //     printf("  IF %s >= %s GOTO %s\n", opnstr1, opnstr2, resultstr);
-        //     break;
-        // case JGT:
-        //     printf("  IF %s > %s GOTO %s\n", opnstr1, opnstr2, resultstr);
-        //     break;
-        // case EQ:
-        //     printf("  IF %s == %s GOTO %s\n", opnstr1, opnstr2, resultstr);
-        //     break;
-        // case NEQ:
-        //     printf("  IF %s != %s GOTO %s\n", opnstr1, opnstr2, resultstr);
-        //     break;
-        // case ARG:
-        //     printf("  ARG %s\n", h->result.id);
-        //     break;
-        // case CALL:
-        //     if (!strcmp(opnstr1, "write"))
-        //         printf("  CALL  %s\n", opnstr1);
-        //     else
-        //         printf("  %s := CALL %s\n", resultstr, opnstr1);
-        //     break;
-        // case RETURN:
-        //     if (h->result.kind)
-        //         printf("  RETURN %s\n", resultstr);
-        //     else
-        //         printf("  RETURN\n");
-        //     break;
-        // }
-    } while (cur != head);
+        Value* val = nullptr;
+        switch (h->op)
+        {
+            case ASSIGNOP:
+            string var_name(h->result.id);
+            Value* data = ConstantInt::get(Type::getInt32Ty(TheContext), h->opn1.const_int);
+
+            auto* alloc = functionBuilder.CreateAlloca(Type::getInt32Ty(TheContext), nullptr, var_name);
+            auto* store = functionBuilder.CreateStore(data, alloc);
+            break;
+        }
+
+        h = h->next;
+    } while (h != head);
+
+    functionBuilder.CreateRetVoid();
+    TheModule.print(errs(), nullptr);
 }
 
 void semantic_error(int line, const string &msg1, const string &msg2)
@@ -176,6 +153,8 @@ void semantic_error(int line, const string &msg1, const string &msg2)
 
 void prn_symbol()
 {
+    return;
+
     int i = 0;
     printf("%6s %6s %6s  %6s %4s %6s\n", "Name", "Alias", "Level", "Type", "Flag", "Offset");
     for (i = 0; i < symbolTable.index; i++)
@@ -850,4 +829,5 @@ void semantic_Analysis0(struct ASTNode *T)
     symbol_scope_TX.top = 1;
     T->offset = 0;
     semantic_Analysis(T);
+    print_lr(T->code);
 }
