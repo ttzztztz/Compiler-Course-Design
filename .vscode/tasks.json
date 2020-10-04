@@ -10,6 +10,7 @@
                 "ast.cc",
                 "lex.yy.cc",
                 "parser.tab.cc",
+                "lr.cc",
                 "-I/usr/lib/llvm-10/include",
                 "-L/usr/lib/llvm-10/lib",
                 "-lLLVM-10",
