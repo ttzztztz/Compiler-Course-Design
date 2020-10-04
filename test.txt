@@ -1,4 +1,4 @@
-int fn(int c) {
+int fn(int c, int c2, int c3, int c4, int c5) {
     int tmp = 1 + 2;
 
     if (c == 1) {
