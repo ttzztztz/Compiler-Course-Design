@@ -109,6 +109,5 @@ void print_lr(struct codenode *head)
         h = h->next;
     } while (h != head);
 
-    functionBuilder.CreateRetVoid();
     TheModule.print(errs(), nullptr);
 }
