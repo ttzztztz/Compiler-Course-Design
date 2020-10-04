@@ -27,6 +27,7 @@ struct opn
     };
     int level;
     int offset;
+    Value* val;
 };
 
 struct Branch {

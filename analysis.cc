@@ -12,6 +12,7 @@
 
 #include "def.h"
 #include "string"
+#include "iostream"
 #include "unordered_map"
 
 using std::string, std::unordered_map;
@@ -47,9 +48,19 @@ string newTemp()
     return "t" + std::to_string(no++);
 }
 
-LLVMContext TheContext;
-IRBuilder<> Builder(TheContext);
-unordered_map<string, BasicBlock*> blocks;
+// unordered_map<string, BasicBlock *> blocks;
+// void gen_opn_val(struct opn *_opn)
+// {
+//     _opn->val = nullptr;
+//     if (_opn->kind == FLOAT)
+//     {
+//         _opn->val = ConstantInt::get(Type::getFloatTy(TheContext), _opn->const_float);
+//     }
+//     else if (_opn->kind == INT)
+//     {
+//         _opn->val = ConstantInt::get(Type::getInt32Ty(TheContext), _opn->const_float);
+//     }
+// }
 
 struct codenode *genIR(int op, struct opn opn1, struct opn opn2, struct opn result)
 {
@@ -66,32 +77,27 @@ struct codenode *genLabel()
 {
     string label = newLabel();
     struct codenode *h = (struct codenode *)malloc(sizeof(struct codenode));
-    struct Branch *br = (struct Branch *)malloc(sizeof(struct Branch));
+    // struct Branch *br = (struct Branch *)malloc(sizeof(struct Branch));
 
-    BasicBlock *block = BasicBlock::Create(TheContext, label);
-    Builder.SetInsertPoint(block);
-    blocks[label] = block;
+    // BasicBlock *block = BasicBlock::Create(TheContext, label);
+    // Builder.SetInsertPoint(block);
+    // blocks[label] = block;
 
     h->op = LABEL;
     strcpy(h->result.id, label.c_str());
     h->next = h->prior = h;
-
-    h->br = br;
-    strcpy(h->br->id, label.c_str());
-    h->br->block = block;
+    // h->br = br;
+    // strcpy(h->br->id, label.c_str());
+    // h->br->block = block;
 
     return h;
 }
 
-struct codenode *genGoto(const Branch * br)
+struct codenode *genGoto(const Branch *br)
 {
     struct codenode *h = (struct codenode *)malloc(sizeof(struct codenode));
     h->op = GOTO;
-
-    const string& label = string(br->id);
-    if (blocks.count(label)) {
-        h->val = Builder.CreateBr(blocks[label]);
-    }
+    const string &label = string(br->id);
 
     strcpy(h->result.id, label.c_str());
     h->next = h->prior = h;
@@ -793,14 +799,50 @@ void semantic_Analysis(struct ASTNode *T)
     }
 }
 
-void print_llvm_ir(struct codenode *head) {
+
+void print_llvm_ir(struct codenode *head)
+{
+    LLVMContext TheContext;
+    IRBuilder<> Builder(TheContext);
+
+    std::vector<Type *> parameters(2, Type::getInt32Ty(TheContext));
+    FunctionType *FT = FunctionType::get(Type::getVoidTy(TheContext), parameters, false);
+    Function *F = Function::Create(FT, Function::ExternalLinkage, "add_fn");
+
+    Value *l = nullptr, *r = nullptr;
+    int Idx = 0;
+    for (auto &Arg : F->args()) {
+        Arg.setName(string{ char('a' + Idx) });
+
+        if (Idx == 0) l = &Arg;
+        else r = &Arg;
+
+        Idx++;
+    }
+
+    BasicBlock *block = BasicBlock::Create(TheContext, "entry", F);
+    Builder.SetInsertPoint(block);
+
     struct codenode *h = head;
-    do {
-        if (h->val) {
-            h->val->print(errs(), true);
+    do
+    {
+        Value* val = nullptr;
+        switch (h->op)
+        {
+            case ASSIGNOP:
+            string var_name(h->result.id);
+            Value* data = ConstantInt::get(Type::getInt32Ty(TheContext), h->opn1.const_int);
+
+            Value* alloc = Builder.CreateAlloca(Type::getInt32Ty(TheContext), nullptr, var_name);
+            Value* store = Builder.CreateStore(data, alloc);
+            break;
         }
-        h=h->next;
-    } while (h!=head);
+
+        if (val) val->print(errs(), true);
+        h = h->next;
+    } while (h != head);
+
+    Builder.CreateRetVoid();
 }
 
 void semantic_Analysis0(struct ASTNode *T)
@@ -815,5 +857,6 @@ void semantic_Analysis0(struct ASTNode *T)
     symbol_scope_TX.top = 1;
     T->offset = 0;
     semantic_Analysis(T);
+
     print_llvm_ir(T->code);
 }
