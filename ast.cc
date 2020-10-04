@@ -19,6 +19,8 @@ struct ASTNode *mknode(int num, int kind, int pos, ...)
 
 void display(struct ASTNode *T, int indent)
 {
+    return;
+
     int i = 1;
     struct ASTNode *T0;
     if (T)
