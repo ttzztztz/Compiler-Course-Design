@@ -2,14 +2,10 @@
 #include "string"
 #include "iostream"
 #include "unordered_map"
+#include "vector"
 
-using std::string;
-
-struct symboltable
-{
-    struct symbol symbols[MAXLENGTH];
-    int index;
-} symbolTable;
+using std::string, std::vector;
+vector<struct symbol> symbol_table;
 
 struct symbol_scope_begin
 {
@@ -100,50 +96,57 @@ void prn_symbol()
 
     int i = 0;
     printf("%6s %6s %6s  %6s %4s %6s\n", "Name", "Alias", "Level", "Type", "Flag", "Offset");
-    for (i = 0; i < symbolTable.index; i++)
-        printf("%6s %6s %6d  %6s %4c %6d\n", symbolTable.symbols[i].name,
-               symbolTable.symbols[i].alias, symbolTable.symbols[i].level,
-               symbolTable.symbols[i].type == INT ? "int" : "float",
-               symbolTable.symbols[i].flag, symbolTable.symbols[i].offset);
+    for (i = 0; i < symbol_table.size(); i++)
+        printf("%6s %6s %6d  %6s %4c %6d\n", symbol_table[i].name,
+               symbol_table[i].alias, symbol_table[i].level,
+               symbol_table[i].type == INT ? "int" : "float",
+               symbol_table[i].flag, symbol_table[i].offset);
 }
 
 int searchSymbolTable(char *name)
 {
-    int i;
-    for (i = symbolTable.index - 1; i >= 0; i--)
-        if (!strcmp(symbolTable.symbols[i].name, name))
+    for (int i = symbol_table.size() - 1; i >= 0; i--)
+        if (!strcmp(symbol_table[i].name, name))
             return i;
     return -1;
 }
 
 int fillSymbolTable(const string &name, const string &alias, int level, int type, char flag, int offset)
 {
-    int i;
-    for (i = symbolTable.index - 1; i >= 0 && (symbolTable.symbols[i].level == level || level == 0); i--)
+    for (int i = symbol_table.size() - 1; i >= 0 && (symbol_table[i].level == level || level == 0); i--)
     {
-        if (level == 0 && symbolTable.symbols[i].level == 1)
+        if (level == 0 && symbol_table[i].level == 1)
             continue;
-        if (!strcmp(symbolTable.symbols[i].name, name.c_str()))
+        if (!strcmp(symbol_table[i].name, name.c_str()))
             return -1;
     }
-    strcpy(symbolTable.symbols[symbolTable.index].name, name.c_str());
-    strcpy(symbolTable.symbols[symbolTable.index].alias, alias.c_str());
-    symbolTable.symbols[symbolTable.index].level = level;
-    symbolTable.symbols[symbolTable.index].type = type;
-    symbolTable.symbols[symbolTable.index].flag = flag;
-    symbolTable.symbols[symbolTable.index].offset = offset;
-    return symbolTable.index++;
+
+    struct symbol sym{};
+
+    strcpy(sym.name, name.c_str());
+    strcpy(sym.alias, alias.c_str());
+    sym.level = level;
+    sym.type = type;
+    sym.flag = flag;
+    sym.offset = offset;
+
+    symbol_table.emplace_back(sym);
+    return symbol_table.size() - 1;
 }
 
 int fill_Temp(const string &name, int level, int type, char flag, int offset)
 {
-    strcpy(symbolTable.symbols[symbolTable.index].name, "");
-    strcpy(symbolTable.symbols[symbolTable.index].alias, name.c_str());
-    symbolTable.symbols[symbolTable.index].level = level;
-    symbolTable.symbols[symbolTable.index].type = type;
-    symbolTable.symbols[symbolTable.index].flag = flag;
-    symbolTable.symbols[symbolTable.index].offset = offset;
-    return symbolTable.index++;
+    struct symbol sym{};
+
+    strcpy(sym.name, "");
+    strcpy(sym.alias, name.c_str());
+    sym.level = level;
+    sym.type = type;
+    sym.flag = flag;
+    sym.offset = offset;
+
+    symbol_table.emplace_back(sym);
+    return symbol_table.size() - 1;
 }
 
 int LEV = 0;
@@ -177,7 +180,7 @@ void ext_var_list(struct ASTNode *T)
 
 int match_param(int i, struct ASTNode *T)
 {
-    int j, num = symbolTable.symbols[i].paramnum;
+    int j, num = symbol_table[i].paramnum;
     int type1, type2, pos = T->pos;
     T = T->ptr[0];
     if (num == 0 && T == NULL)
@@ -189,7 +192,7 @@ int match_param(int i, struct ASTNode *T)
             semantic_error(pos, "", "Too few parameters to call function!");
             return 0;
         }
-        type1 = symbolTable.symbols[i + j].type;
+        type1 = symbol_table[i + j].type;
         type2 = T->ptr[0]->type;
         if (type1 != type2)
         {
@@ -229,11 +232,11 @@ void boolExp(struct ASTNode *T)
             if (T->width < T->ptr[1]->width)
                 T->width = T->ptr[1]->width;
             opn1.kind = ID;
-            strcpy(opn1.id, symbolTable.symbols[T->ptr[0]->place].alias);
-            opn1.offset = symbolTable.symbols[T->ptr[0]->place].offset;
+            strcpy(opn1.id, symbol_table[T->ptr[0]->place].alias);
+            opn1.offset = symbol_table[T->ptr[0]->place].offset;
             opn2.kind = ID;
-            strcpy(opn2.id, symbolTable.symbols[T->ptr[1]->place].alias);
-            opn2.offset = symbolTable.symbols[T->ptr[1]->place].offset;
+            strcpy(opn2.id, symbol_table[T->ptr[1]->place].alias);
+            opn2.offset = symbol_table[T->ptr[1]->place].offset;
             result.kind = ID;
             strcpy(result.id, T->Etrue);
             if (strcmp(T->type_id, "<") == 0)
@@ -299,14 +302,14 @@ void Exp(struct ASTNode *T)
             rtn = searchSymbolTable(T->type_id);
             if (rtn == -1)
                 semantic_error(T->pos, T->type_id, "Variable not declared.");
-            if (symbolTable.symbols[rtn].flag == 'F')
+            if (symbol_table[rtn].flag == 'F')
                 semantic_error(T->pos, T->type_id, "Type doesn't match.");
             else
             {
                 T->place = rtn;
                 T->code = NULL;
-                T->type = symbolTable.symbols[rtn].type;
-                T->offset = symbolTable.symbols[rtn].offset;
+                T->type = symbol_table[rtn].type;
+                T->offset = symbol_table[rtn].offset;
                 T->width = 0;
             }
             break;
@@ -316,8 +319,8 @@ void Exp(struct ASTNode *T)
             opn1.kind = INT;
             opn1.const_int = T->type_int;
             result.kind = ID;
-            strcpy(result.id, symbolTable.symbols[T->place].alias);
-            result.offset = symbolTable.symbols[T->place].offset;
+            strcpy(result.id, symbol_table[T->place].alias);
+            result.offset = symbol_table[T->place].offset;
             T->code = genIR(ASSIGNOP, opn1, opn2, result);
             T->width = 4;
             break;
@@ -327,8 +330,8 @@ void Exp(struct ASTNode *T)
             opn1.kind = FLOAT;
             opn1.const_float = T->type_float;
             result.kind = ID;
-            strcpy(result.id, symbolTable.symbols[T->place].alias);
-            result.offset = symbolTable.symbols[T->place].offset;
+            strcpy(result.id, symbol_table[T->place].alias);
+            result.offset = symbol_table[T->place].offset;
             T->code = genIR(ASSIGNOP, opn1, opn2, result);
             T->width = 4;
             break;
@@ -346,11 +349,11 @@ void Exp(struct ASTNode *T)
                 T->width = T->ptr[1]->width;
                 T->code = merge(2, T->ptr[0]->code, T->ptr[1]->code);
                 opn1.kind = ID;
-                strcpy(opn1.id, symbolTable.symbols[T->ptr[1]->place].alias);
-                opn1.offset = symbolTable.symbols[T->ptr[1]->place].offset;
+                strcpy(opn1.id, symbol_table[T->ptr[1]->place].alias);
+                opn1.offset = symbol_table[T->ptr[1]->place].offset;
                 result.kind = ID;
-                strcpy(result.id, symbolTable.symbols[T->ptr[0]->place].alias);
-                result.offset = symbolTable.symbols[T->ptr[0]->place].offset;
+                strcpy(result.id, symbol_table[T->ptr[0]->place].alias);
+                result.offset = symbol_table[T->ptr[0]->place].offset;
                 T->code = merge(2, T->code, genIR(ASSIGNOP, opn1, opn2, result));
             }
             break;
@@ -377,17 +380,17 @@ void Exp(struct ASTNode *T)
                 T->type = INT, T->width = T->ptr[0]->width + T->ptr[1]->width + 2;
             T->place = fill_Temp(newTemp(), LEV, T->type, 'T', T->offset + T->ptr[0]->width + T->ptr[1]->width);
             opn1.kind = ID;
-            strcpy(opn1.id, symbolTable.symbols[T->ptr[0]->place].alias);
+            strcpy(opn1.id, symbol_table[T->ptr[0]->place].alias);
             opn1.type = T->ptr[0]->type;
-            opn1.offset = symbolTable.symbols[T->ptr[0]->place].offset;
+            opn1.offset = symbol_table[T->ptr[0]->place].offset;
             opn2.kind = ID;
-            strcpy(opn2.id, symbolTable.symbols[T->ptr[1]->place].alias);
+            strcpy(opn2.id, symbol_table[T->ptr[1]->place].alias);
             opn2.type = T->ptr[1]->type;
-            opn2.offset = symbolTable.symbols[T->ptr[1]->place].offset;
+            opn2.offset = symbol_table[T->ptr[1]->place].offset;
             result.kind = ID;
-            strcpy(result.id, symbolTable.symbols[T->place].alias);
+            strcpy(result.id, symbol_table[T->place].alias);
             result.type = T->type;
-            result.offset = symbolTable.symbols[T->place].offset;
+            result.offset = symbol_table[T->place].offset;
             T->code = merge(3, T->ptr[0]->code, T->ptr[1]->code, genIR(T->kind, opn1, opn2, result));
             T->width = T->ptr[0]->width + T->ptr[1]->width + (T->type == INT ? 4 : 8);
             break;
@@ -402,12 +405,12 @@ void Exp(struct ASTNode *T)
                 semantic_error(T->pos, T->type_id, "Function not declared.");
                 break;
             }
-            if (symbolTable.symbols[rtn].flag != 'F')
+            if (symbol_table[rtn].flag != 'F')
             {
                 semantic_error(T->pos, T->type_id, "Not a function!");
                 break;
             }
-            T->type = symbolTable.symbols[rtn].type;
+            T->type = symbol_table[rtn].type;
             width = T->type == INT ? 4 : 8;
             if (T->ptr[0])
             {
@@ -426,8 +429,8 @@ void Exp(struct ASTNode *T)
             while (T0)
             {
                 result.kind = ID;
-                strcpy(result.id, symbolTable.symbols[T0->ptr[0]->place].alias);
-                result.offset = symbolTable.symbols[T0->ptr[0]->place].offset;
+                strcpy(result.id, symbol_table[T0->ptr[0]->place].alias);
+                result.offset = symbol_table[T0->ptr[0]->place].offset;
                 T->code = merge(2, T->code, genIR(ARG, opn1, opn2, result));
                 T0 = T0->ptr[1];
             }
@@ -436,8 +439,8 @@ void Exp(struct ASTNode *T)
             strcpy(opn1.id, T->type_id);
             opn1.offset = rtn;
             result.kind = ID;
-            strcpy(result.id, symbolTable.symbols[T->place].alias);
-            result.offset = symbolTable.symbols[T->place].offset;
+            strcpy(result.id, symbol_table[T->place].alias);
+            result.offset = symbol_table[T->place].offset;
             T->code = merge(2, T->code, genIR(CALL, opn1, opn2, result));
             break;
         case ARGS:
@@ -496,7 +499,7 @@ void semantic_Analysis(struct ASTNode *T)
             T->ptr[2]->offset = T->offset;
             strcpy(T->ptr[2]->Snext, newLabel().c_str());
             semantic_Analysis(T->ptr[2]);
-            symbolTable.symbols[T->ptr[1]->place].offset = T->offset + T->ptr[2]->width;
+            symbol_table[T->ptr[1]->place].offset = T->offset + T->ptr[2]->width;
             T->code = merge(3, T->ptr[1]->code, T->ptr[2]->code, genLabel(T->ptr[2]->Snext));
             break;
         case FUNC_DEC:
@@ -518,11 +521,11 @@ void semantic_Analysis(struct ASTNode *T)
                 T->ptr[0]->offset = T->offset;
                 semantic_Analysis(T->ptr[0]);
                 T->width = T->ptr[0]->width;
-                symbolTable.symbols[rtn].paramnum = T->ptr[0]->num;
+                symbol_table[rtn].paramnum = T->ptr[0]->num;
                 T->code = merge(2, T->code, T->ptr[0]->code);
             }
             else
-                symbolTable.symbols[rtn].paramnum = 0, T->width = 0;
+                symbol_table[rtn].paramnum = 0, T->width = 0;
             break;
         case PARAM_LIST:
             T->ptr[0]->offset = T->offset;
@@ -551,13 +554,13 @@ void semantic_Analysis(struct ASTNode *T)
             T->num = 1;
             T->width = T->ptr[0]->type == INT ? 4 : 8;
             result.kind = ID;
-            strcpy(result.id, symbolTable.symbols[rtn].alias);
+            strcpy(result.id, symbol_table[rtn].alias);
             result.offset = T->offset;
             T->code = genIR(PARAM, opn1, opn2, result);
             break;
         case COMP_STM:
             LEV++;
-            symbol_scope_TX.TX[symbol_scope_TX.top++] = symbolTable.index;
+            symbol_scope_TX.TX[symbol_scope_TX.top++] = symbol_table.size();
             T->width = 0;
             T->code = NULL;
             if (T->ptr[0])
@@ -577,7 +580,7 @@ void semantic_Analysis(struct ASTNode *T)
             }
             prn_symbol();
             LEV--;
-            symbolTable.index = symbol_scope_TX.TX[--symbol_scope_TX.top];
+            symbol_table.resize(symbol_scope_TX.TX[--symbol_scope_TX.top]);
             break;
         case DEF_LIST:
             T->code = NULL;
@@ -633,9 +636,9 @@ void semantic_Analysis(struct ASTNode *T)
                         T0->ptr[0]->ptr[1]->offset = T->offset + T->width + width;
                         Exp(T0->ptr[0]->ptr[1]);
                         opn1.kind = ID;
-                        strcpy(opn1.id, symbolTable.symbols[T0->ptr[0]->ptr[1]->place].alias);
+                        strcpy(opn1.id, symbol_table[T0->ptr[0]->ptr[1]->place].alias);
                         result.kind = ID;
-                        strcpy(result.id, symbolTable.symbols[T0->ptr[0]->place].alias);
+                        strcpy(result.id, symbol_table[T0->ptr[0]->place].alias);
                         T->code = merge(3, T->code, T0->ptr[0]->ptr[1]->code, genIR(ASSIGNOP, opn1, opn2, result));
                     }
                     T->width += width + T0->ptr[0]->ptr[1]->width;
@@ -729,8 +732,8 @@ void semantic_Analysis(struct ASTNode *T)
 
                 T->width = T->ptr[0]->width;
                 result.kind = ID;
-                strcpy(result.id, symbolTable.symbols[T->ptr[0]->place].alias);
-                result.offset = symbolTable.symbols[T->ptr[0]->place].offset;
+                strcpy(result.id, symbol_table[T->ptr[0]->place].alias);
+                result.offset = symbol_table[T->ptr[0]->place].offset;
                 T->code = merge(2, T->ptr[0]->code, genIR(RETURN, opn1, opn2, result));
             }
             else
@@ -762,12 +765,6 @@ void semantic_Analysis(struct ASTNode *T)
 
 void semantic_Analysis0(struct ASTNode *T)
 {
-    symbolTable.index = 0;
-    fillSymbolTable("read", "", 0, INT, 'F', 4);
-    symbolTable.symbols[0].paramnum = 0;
-    fillSymbolTable("write", "", 0, INT, 'F', 4);
-    symbolTable.symbols[1].paramnum = 1;
-    fillSymbolTable("x", "", 1, INT, 'P', 12);
     symbol_scope_TX.TX[0] = 0;
     symbol_scope_TX.top = 1;
     T->offset = 0;
