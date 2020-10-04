@@ -6,6 +6,11 @@
 #include "stdarg.h"
 #include "parser.tab.h"
 
+#include "llvm/IR/Value.h"
+#include "llvm/IR/BasicBlock.h"
+
+using llvm::Value, llvm::BasicBlock;
+
 #define MAXLENGTH 200
 #define DX 3 * sizeof(int)
 
@@ -24,11 +29,18 @@ struct opn
     int offset;
 };
 
+struct Branch {
+    BasicBlock* block;
+    char id[15];
+};
+
 struct codenode
 {
     int op;
     struct opn opn1, opn2, result;
     struct codenode *next, *prior;
+    Value* val;
+    Branch* br;
 };
 
 struct ASTNode
@@ -42,8 +54,7 @@ struct ASTNode
     };
     struct ASTNode *ptr[4];
     int place;
-    char Etrue[15], Efalse[15];
-    char Snext[15];
+    struct codenode* Etrue, *Efalse, *Snext;
     struct codenode *code;
     int type;
     int pos;

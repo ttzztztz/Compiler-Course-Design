@@ -12,8 +12,9 @@
 
 #include "def.h"
 #include "string"
+#include "unordered_map"
 
-using std::string;
+using std::string, std::unordered_map;
 using namespace llvm;
 
 struct symboltable
@@ -46,6 +47,10 @@ string newTemp()
     return "t" + std::to_string(no++);
 }
 
+LLVMContext TheContext;
+IRBuilder<> Builder(TheContext);
+unordered_map<string, BasicBlock*> blocks;
+
 struct codenode *genIR(int op, struct opn opn1, struct opn opn2, struct opn result)
 {
     struct codenode *h = (struct codenode *)malloc(sizeof(struct codenode));
@@ -57,20 +62,38 @@ struct codenode *genIR(int op, struct opn opn1, struct opn opn2, struct opn resu
     return h;
 }
 
-struct codenode *genLabel(char *label)
+struct codenode *genLabel()
 {
+    string label = newLabel();
     struct codenode *h = (struct codenode *)malloc(sizeof(struct codenode));
+    struct Branch *br = (struct Branch *)malloc(sizeof(struct Branch));
+
+    BasicBlock *block = BasicBlock::Create(TheContext, label);
+    Builder.SetInsertPoint(block);
+    blocks[label] = block;
+
     h->op = LABEL;
-    strcpy(h->result.id, label);
+    strcpy(h->result.id, label.c_str());
     h->next = h->prior = h;
+
+    h->br = br;
+    strcpy(h->br->id, label.c_str());
+    h->br->block = block;
+
     return h;
 }
 
-struct codenode *genGoto(char *label)
+struct codenode *genGoto(const Branch * br)
 {
     struct codenode *h = (struct codenode *)malloc(sizeof(struct codenode));
     h->op = GOTO;
-    strcpy(h->result.id, label);
+
+    const string& label = string(br->id);
+    if (blocks.count(label)) {
+        h->val = Builder.CreateBr(blocks[label]);
+    }
+
+    strcpy(h->result.id, label.c_str());
     h->next = h->prior = h;
     return h;
 }
@@ -100,82 +123,14 @@ struct codenode *merge(int num, ...)
     return h1;
 }
 
-void prnIR(struct codenode *head)
-{
-    LLVMContext TheContext;
-    IRBuilder<> Builder(TheContext);
-
-    struct codenode *cur = head;
-    do
-    {
-        // switch (cur->op)
-        // {
-        // case ASSIGNOP:
-        //     printf("  %s := %s\n", resultstr, opnstr1);
-        //     break;
-        // case PLUS:
-        // case MINUS:
-        // case STAR:
-        // case DIV:
-        //     printf("  %s := %s %c %s\n", resultstr, opnstr1,
-        //            h->op == PLUS ? '+' : h->op == MINUS ? '-' : h->op == STAR ? '*' : '\\', opnstr2);
-        //     break;
-        // case FUNCTION:
-        //     printf("\nFUNCTION %s :\n", h->result.id);
-        //     break;
-        // case PARAM:
-        //     printf("  PARAM %s\n", h->result.id);
-        //     break;
-        // case LABEL:
-        //     printf("LABEL %s :\n", h->result.id);
-        //     break;
-        // case GOTO:
-        //     printf("  GOTO %s\n", h->result.id);
-        //     break;
-        // case JLE:
-        //     printf("  IF %s <= %s GOTO %s\n", opnstr1, opnstr2, resultstr);
-        //     break;
-        // case JLT:
-        //     printf("  IF %s < %s GOTO %s\n", opnstr1, opnstr2, resultstr);
-        //     break;
-        // case JGE:
-        //     printf("  IF %s >= %s GOTO %s\n", opnstr1, opnstr2, resultstr);
-        //     break;
-        // case JGT:
-        //     printf("  IF %s > %s GOTO %s\n", opnstr1, opnstr2, resultstr);
-        //     break;
-        // case EQ:
-        //     printf("  IF %s == %s GOTO %s\n", opnstr1, opnstr2, resultstr);
-        //     break;
-        // case NEQ:
-        //     printf("  IF %s != %s GOTO %s\n", opnstr1, opnstr2, resultstr);
-        //     break;
-        // case ARG:
-        //     printf("  ARG %s\n", h->result.id);
-        //     break;
-        // case CALL:
-        //     if (!strcmp(opnstr1, "write"))
-        //         printf("  CALL  %s\n", opnstr1);
-        //     else
-        //         printf("  %s := CALL %s\n", resultstr, opnstr1);
-        //     break;
-        // case RETURN:
-        //     if (h->result.kind)
-        //         printf("  RETURN %s\n", resultstr);
-        //     else
-        //         printf("  RETURN\n");
-        //     break;
-        // }
-    } while (cur != head);
-}
-
 void semantic_error(int line, const string &msg1, const string &msg2)
 {
     printf("Line %d Message: %s %s\n", line, msg1.c_str(), msg2.c_str());
 }
 
-void prn_symbol()
+void print_symbol()
 {
+    return;
     int i = 0;
     printf("%6s %6s %6s  %6s %4s %6s\n", "Name", "Alias", "Level", "Type", "Flag", "Offset");
     for (i = 0; i < symbolTable.index; i++)
@@ -313,7 +268,7 @@ void boolExp(struct ASTNode *T)
             strcpy(opn2.id, symbolTable.symbols[T->ptr[1]->place].alias);
             opn2.offset = symbolTable.symbols[T->ptr[1]->place].offset;
             result.kind = ID;
-            strcpy(result.id, T->Etrue);
+            strcpy(result.id, T->Etrue->br->id);
             if (strcmp(T->type_id, "<") == 0)
                 op = JLT;
             else if (strcmp(T->type_id, "<=") == 0)
@@ -327,22 +282,22 @@ void boolExp(struct ASTNode *T)
             else if (strcmp(T->type_id, "!=") == 0)
                 op = NEQ;
             T->code = genIR(op, opn1, opn2, result);
-            T->code = merge(4, T->ptr[0]->code, T->ptr[1]->code, T->code, genGoto(T->Efalse));
+            T->code = merge(4, T->ptr[0]->code, T->ptr[1]->code, T->code, T->Efalse = genLabel());
             break;
         case AND:
         case OR:
             if (T->kind == AND)
             {
-                strcpy(T->ptr[0]->Etrue, newLabel().c_str());
-                strcpy(T->ptr[0]->Efalse, T->Efalse);
+                T->ptr[0]->Etrue = genLabel();
+                T->ptr[0]->Efalse = T->Efalse;
             }
             else
             {
-                strcpy(T->ptr[0]->Etrue, T->Etrue);
-                strcpy(T->ptr[0]->Efalse, newLabel().c_str());
+                T->ptr[0]->Etrue = T->Etrue;
+                T->ptr[0]->Efalse = genLabel();
             }
-            strcpy(T->ptr[1]->Etrue, T->Etrue);
-            strcpy(T->ptr[1]->Efalse, T->Efalse);
+            T->ptr[1]->Etrue = T->Etrue;
+            T->ptr[1]->Efalse = T->Efalse;
             T->ptr[0]->offset = T->ptr[1]->offset = T->offset;
             boolExp(T->ptr[0]);
             T->width = T->ptr[0]->width;
@@ -350,13 +305,13 @@ void boolExp(struct ASTNode *T)
             if (T->width < T->ptr[1]->width)
                 T->width = T->ptr[1]->width;
             if (T->kind == AND)
-                T->code = merge(3, T->ptr[0]->code, genLabel(T->ptr[0]->Etrue), T->ptr[1]->code);
+                T->code = merge(3, T->ptr[0]->code, T->ptr[0]->Etrue = genLabel(), T->ptr[1]->code);
             else
-                T->code = merge(3, T->ptr[0]->code, genLabel(T->ptr[0]->Efalse), T->ptr[1]->code);
+                T->code = merge(3, T->ptr[0]->code, T->ptr[0]->Efalse = genLabel(), T->ptr[1]->code);
             break;
         case NOT:
-            strcpy(T->ptr[0]->Etrue, T->Efalse);
-            strcpy(T->ptr[0]->Efalse, T->Etrue);
+            T->ptr[0]->Etrue = T->Efalse;
+            T->ptr[0]->Efalse = T->Etrue;
             boolExp(T->ptr[0]);
             T->code = T->ptr[0]->code;
             break;
@@ -572,10 +527,10 @@ void semantic_Analysis(struct ASTNode *T)
             semantic_Analysis(T->ptr[1]);
             T->offset += T->ptr[1]->width;
             T->ptr[2]->offset = T->offset;
-            strcpy(T->ptr[2]->Snext, newLabel().c_str());
+            T->ptr[2]->Snext = genLabel();
             semantic_Analysis(T->ptr[2]);
             symbolTable.symbols[T->ptr[1]->place].offset = T->offset + T->ptr[2]->width;
-            T->code = merge(3, T->ptr[1]->code, T->ptr[2]->code, genLabel(T->ptr[2]->Snext));
+            T->code = merge(3, T->ptr[1]->code, T->ptr[2]->code, T->ptr[2]->Snext = genLabel());
             break;
         case FUNC_DEC:
             rtn = fillSymbolTable(T->type_id, newAlias(), LEV, T->type, 'F', 0);
@@ -648,12 +603,12 @@ void semantic_Analysis(struct ASTNode *T)
             if (T->ptr[1])
             {
                 T->ptr[1]->offset = T->offset + T->width;
-                strcpy(T->ptr[1]->Snext, T->Snext);
+                T->ptr[1]->Snext = T->Snext;
                 semantic_Analysis(T->ptr[1]);
                 T->width += T->ptr[1]->width;
                 T->code = merge(2, T->code, T->ptr[1]->code);
             }
-            prn_symbol();
+            print_symbol();
             LEV--;
             symbolTable.index = symbol_scope_TX.TX[--symbol_scope_TX.top];
             break;
@@ -729,67 +684,67 @@ void semantic_Analysis(struct ASTNode *T)
                 break;
             }
             if (T->ptr[1])
-                strcpy(T->ptr[0]->Snext, newLabel().c_str());
+                T->ptr[0]->Snext = genLabel();
             else
-                strcpy(T->ptr[0]->Snext, T->Snext);
+                T->ptr[0]->Snext = T->Snext;
             T->ptr[0]->offset = T->offset;
             semantic_Analysis(T->ptr[0]);
             T->code = T->ptr[0]->code;
             T->width = T->ptr[0]->width;
             if (T->ptr[1])
             {
-                strcpy(T->ptr[1]->Snext, T->Snext);
+                T->ptr[1]->Snext = T->Snext;
                 T->ptr[1]->offset = T->offset;
                 semantic_Analysis(T->ptr[1]);
                 if (T->ptr[0]->kind == RETURN || T->ptr[0]->kind == EXP_STMT || T->ptr[0]->kind == COMP_STM)
                     T->code = merge(2, T->code, T->ptr[1]->code);
                 else
-                    T->code = merge(3, T->code, genLabel(T->ptr[0]->Snext), T->ptr[1]->code);
+                    T->code = merge(3, T->code, T->ptr[0]->Snext = genLabel(), T->ptr[1]->code);
                 if (T->ptr[1]->width > T->width)
                     T->width = T->ptr[1]->width;
             }
             break;
         case IF_THEN:
-            strcpy(T->ptr[0]->Etrue, newLabel().c_str());
-            strcpy(T->ptr[0]->Efalse, T->Snext);
+            T->ptr[0]->Etrue = genLabel();
+            T->ptr[0]->Efalse = T->Snext;
             T->ptr[0]->offset = T->ptr[1]->offset = T->offset;
             boolExp(T->ptr[0]);
             T->width = T->ptr[0]->width;
-            strcpy(T->ptr[1]->Snext, T->Snext);
+            T->ptr[1]->Snext = T->Snext;
             semantic_Analysis(T->ptr[1]);
             if (T->width < T->ptr[1]->width)
                 T->width = T->ptr[1]->width;
-            T->code = merge(3, T->ptr[0]->code, genLabel(T->ptr[0]->Etrue), T->ptr[1]->code);
+            T->code = merge(3, T->ptr[0]->code, T->ptr[0]->Etrue = genLabel(), T->ptr[1]->code);
             break;
         case IF_THEN_ELSE:
-            strcpy(T->ptr[0]->Etrue, newLabel().c_str());
-            strcpy(T->ptr[0]->Efalse, newLabel().c_str());
+            T->ptr[0]->Etrue = genLabel();
+            T->ptr[0]->Efalse = genLabel();
             T->ptr[0]->offset = T->ptr[1]->offset = T->ptr[2]->offset = T->offset;
             boolExp(T->ptr[0]);
             T->width = T->ptr[0]->width;
-            strcpy(T->ptr[1]->Snext, T->Snext);
+            T->ptr[1]->Snext = T->Snext;
             semantic_Analysis(T->ptr[1]);
             if (T->width < T->ptr[1]->width)
                 T->width = T->ptr[1]->width;
-            strcpy(T->ptr[2]->Snext, T->Snext);
+            T->ptr[2]->Snext = T->Snext;
             semantic_Analysis(T->ptr[2]);
             if (T->width < T->ptr[2]->width)
                 T->width = T->ptr[2]->width;
-            T->code = merge(6, T->ptr[0]->code, genLabel(T->ptr[0]->Etrue), T->ptr[1]->code,
-                            genGoto(T->Snext), genLabel(T->ptr[0]->Efalse), T->ptr[2]->code);
+            T->code = merge(6, T->ptr[0]->code, T->ptr[0]->Etrue = genLabel(), T->ptr[1]->code,
+                            genGoto(T->Snext->br), T->ptr[0]->Efalse = genLabel(), T->ptr[2]->code);
             break;
         case WHILE:
-            strcpy(T->ptr[0]->Etrue, newLabel().c_str());
-            strcpy(T->ptr[0]->Efalse, T->Snext);
+            T->ptr[0]->Etrue = genLabel();
+            T->ptr[0]->Efalse = T->Snext;
             T->ptr[0]->offset = T->ptr[1]->offset = T->offset;
             boolExp(T->ptr[0]);
             T->width = T->ptr[0]->width;
-            strcpy(T->ptr[1]->Snext, newLabel().c_str());
+            T->ptr[1]->Snext = genLabel();
             semantic_Analysis(T->ptr[1]);
             if (T->width < T->ptr[1]->width)
                 T->width = T->ptr[1]->width;
-            T->code = merge(5, genLabel(T->ptr[1]->Snext), T->ptr[0]->code,
-                            genLabel(T->ptr[0]->Etrue), T->ptr[1]->code, genGoto(T->ptr[1]->Snext));
+            T->code = merge(5, T->ptr[1]->Snext = genLabel(), T->ptr[0]->code,
+                            T->ptr[0]->Etrue = genLabel(), T->ptr[1]->code, genGoto(T->ptr[1]->Snext->br));
             break;
         case EXP_STMT:
             T->ptr[0]->offset = T->offset;
@@ -838,6 +793,16 @@ void semantic_Analysis(struct ASTNode *T)
     }
 }
 
+void print_llvm_ir(struct codenode *head) {
+    struct codenode *h = head;
+    do {
+        if (h->val) {
+            h->val->print(errs(), true);
+        }
+        h=h->next;
+    } while (h!=head);
+}
+
 void semantic_Analysis0(struct ASTNode *T)
 {
     symbolTable.index = 0;
@@ -850,4 +815,5 @@ void semantic_Analysis0(struct ASTNode *T)
     symbol_scope_TX.top = 1;
     T->offset = 0;
     semantic_Analysis(T);
+    print_llvm_ir(T->code);
 }

@@ -1,13 +1,7 @@
-int a, b;
-
-int fn(int c, int d) { 
-    i32 middle = c * d;
-
-    if (middle == 1) {
-        return middle / (c + d);
-    } else if (middle % 3 == 2) {
-        return middle * (c + d);
+int fn(int c) {
+    if (c == 1) {
+        return 1;
     } else {
-        return 3;
+        return 2;
     }
 }
