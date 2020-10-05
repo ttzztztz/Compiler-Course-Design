@@ -13,13 +13,10 @@ struct opn
 {
     int kind;
     int type;
-    union
-    {
-        int const_int;
-        float const_float;
-        char const_char;
-        char id[33];
-    };
+    int const_int;
+    float const_float;
+    char const_char;
+    string id;
     int level;
     int offset;
 };
@@ -36,14 +33,14 @@ struct ASTNode
     int kind;
     union
     {
-        char type_id[33]; 
+        string type_id;
         int type_int; 
         float type_float; 
     };
     struct ASTNode *ptr[4];
     int place;
-    char Etrue[15], Efalse[15];
-    char Snext[15];
+    string Etrue, Efalse;
+    string Snext;
     struct codenode *code;
     int type;
     int pos;
@@ -54,11 +51,11 @@ struct ASTNode
 
 struct symbol
 {
-    char name[33];
+    string name;
     int level;
     int type;
     int paramnum;
-    char alias[10];
+    string alias;
     char flag;
     char offset;
 };

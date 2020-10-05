@@ -12,7 +12,7 @@ struct ASTNode *mknode(int num, int kind, int pos, ...)
     for (i = 0; i < num; i++)
         T->ptr[i] = va_arg(pArgs, struct ASTNode *);
     while (i < 4)
-        T->ptr[i++] = NULL;
+        T->ptr[i++] = nullptr;
     va_end(pArgs);
     return T;
 }
