@@ -65,7 +65,7 @@ VarDec:  ID          {$$=mknode(0,ID,yylineno);$$->type_id = $1;}
 FuncDec: ID LP VarList RP   {$$=mknode(1,FUNC_DEC,yylineno,$3);$$->type_id = $1;}
 		|ID LP  RP   {$$=mknode(0,FUNC_DEC,yylineno);$$->type_id = $1;$$->ptr[0]=NULL;}
 
-        ;  
+        ;
 VarList: ParamDec  {$$=mknode(1,PARAM_LIST,yylineno,$1);}
         | ParamDec COMMA  VarList  {$$=mknode(2,PARAM_LIST,yylineno,$1,$3);}
         ;
@@ -74,6 +74,7 @@ ParamDec: Specifier VarDec         {$$=mknode(2,PARAM_DEC,yylineno,$1,$2);}
 
 CompSt: LC DefList StmList RC    {$$=mknode(2,COMP_STM,yylineno,$2,$3);}
        ;
+
 StmList: {$$=NULL; }  
         | Stmt StmList  {$$=mknode(2,STM_LIST,yylineno,$1,$2);}
         ;

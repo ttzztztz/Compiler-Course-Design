@@ -38,7 +38,7 @@ void display(ASTNode *T, int indent)
             display(T->ptr[1], indent + 4);
             break;
         case TYPE:
-            printf("%*cType: %s\n", indent, ' ', T->type_id);
+            printf("%*cType: %s\n", indent, ' ', T->type_id.c_str());
             break;
         case EXT_DEC_LIST:
             display(T->ptr[0], indent);
@@ -51,7 +51,7 @@ void display(ASTNode *T, int indent)
             display(T->ptr[2], indent + 2);
             break;
         case FUNC_DEC:
-            printf("%*cFunction Name: %s\n", indent, ' ', T->type_id);
+            printf("%*cFunction Name: %s\n", indent, ' ', T->type_id.c_str());
             if (T->ptr[0])
             {
                 printf("%*cFunction Parameters: \n", indent, ' ');
@@ -65,7 +65,7 @@ void display(ASTNode *T, int indent)
             display(T->ptr[1], indent);
             break;
         case PARAM_DEC:
-            printf("%*cType: %s, Parameter Name: %s\n", indent, ' ', T->ptr[0]->type == INT ? "int" : "float", T->ptr[1]->type_id);
+            printf("%*cType: %s, Parameter Name: %s\n", indent, ' ', T->ptr[0]->type == INT ? "int" : "float", T->ptr[1]->type_id.c_str());
             break;
         case EXP_STMT:
             printf("%*cExpression:(%d)\n", indent, ' ', T->pos);
@@ -124,17 +124,17 @@ void display(ASTNode *T, int indent)
             while (T0)
             {
                 if (T0->ptr[0]->kind == ID)
-                    printf("%*c %s\n", indent + 4, ' ', T0->ptr[0]->type_id);
+                    printf("%*c %s\n", indent + 4, ' ', T0->ptr[0]->type_id.c_str());
                 else if (T0->ptr[0]->kind == ASSIGNOP)
                 {
-                    printf("%*c %s ASSIGNOP\n ", indent + 4, ' ', T0->ptr[0]->ptr[0]->type_id);
+                    printf("%*c %s ASSIGNOP\n ", indent + 4, ' ', T0->ptr[0]->ptr[0]->type_id.c_str());
                     display(T0->ptr[0]->ptr[1], indent + T0->ptr[0]->ptr[0]->type_id.size() + 7);
                 }
                 T0 = T0->ptr[1];
             }
             break;
         case ID:
-            printf("%*cID: %s\n", indent, ' ', T->type_id);
+            printf("%*cID: %s\n", indent, ' ', T->type_id.c_str());
             break;
         case INT:
             printf("%*cINT: %d\n", indent, ' ', T->type_int);
@@ -151,18 +151,18 @@ void display(ASTNode *T, int indent)
         case STAR:
         case MOD:
         case DIV:
-            printf("%*c%s\n", indent, ' ', T->type_id);
+            printf("%*c%s\n", indent, ' ', T->type_id.c_str());
             display(T->ptr[0], indent + 2);
             display(T->ptr[1], indent + 2);
             break;
         case NOT:
         case UMINUS:
-            printf("%*c%s\n", indent, ' ', T->type_id);
+            printf("%*c%s\n", indent, ' ', T->type_id.c_str());
             display(T->ptr[0], indent + 2);
             break;
         case FUNC_CALL:
             printf("%*cFunction Call: (%d)\n", indent, ' ', T->pos);
-            printf("%*cFunction Name: %s\n", indent + 2, ' ', T->type_id);
+            printf("%*cFunction Name: %s\n", indent + 2, ' ', T->type_id.c_str());
             display(T->ptr[0], indent + 2);
             break;
         case ARGS:
