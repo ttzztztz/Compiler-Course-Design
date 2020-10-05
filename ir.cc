@@ -116,11 +116,6 @@ void print_lr(CodeNode *head)
         {
             const string &function_name = h->result.id;
             const int idx = searchSymbolTableWithFlag(function_name, 'F');
-            if (idx == -1)
-            {
-                // panic
-                exit(1);
-            }
 
             vector<Type *> parameters;
             for (int i = 0; i < symbol_table[idx].paramnum; i++)
