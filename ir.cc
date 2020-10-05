@@ -11,6 +11,7 @@
 #include "llvm/IR/Verifier.h"
 
 #include "def.h"
+#include "iostream"
 
 using namespace llvm;
 using std::pair;
@@ -41,10 +42,13 @@ void print_lr(CodeNode *head)
     LLVMContext TheContext;
     Module TheModule("code", TheContext);
 
-    vector<BasicBlock *> block;
-    vector<IRBuilder<>> builder;
+    vector<BasicBlock *> block_stack;
+    vector<IRBuilder<>> builder_stack;
+    vector<Function*> function_stack;
+
     unordered_map<string, pair<Function*, FunctionType*>> function_table;
     unordered_map<string, Value *> val_table;
+    unordered_map<string, BasicBlock*> label_table;
 
     CodeNode *h = head;
     do
@@ -58,43 +62,43 @@ void print_lr(CodeNode *head)
         {
             string var_name(h->result.id);
 
-            auto *alloc = builder.back().CreateAlloca(Type::getInt32Ty(TheContext), nullptr, var_name);
-            auto *store = builder.back().CreateStore(l, alloc);
+            auto *alloc = builder_stack.back().CreateAlloca(Type::getInt32Ty(TheContext), nullptr, var_name);
+            auto *store = builder_stack.back().CreateStore(l, alloc);
             val_table[var_name] = alloc;
             break;
         }
 
         case PLUS:
         {
-            auto *res = builder.back().CreateAdd(l, r, h->result.id);
+            auto *res = builder_stack.back().CreateAdd(l, r, h->result.id);
             val_table[h->result.id] = res;
             break;
         }
 
         case MINUS:
         {
-            auto *res = builder.back().CreateSub(l, r, h->result.id);
+            auto *res = builder_stack.back().CreateSub(l, r, h->result.id);
             val_table[h->result.id] = res;
             break;
         }
 
         case STAR:
         {
-            auto *res = builder.back().CreateMul(l, r, h->result.id);
+            auto *res = builder_stack.back().CreateMul(l, r, h->result.id);
             val_table[h->result.id] = res;
             break;
         }
 
         case DIV:
         {
-            auto *res = builder.back().CreateSDiv(l, r, h->result.id);
+            auto *res = builder_stack.back().CreateSDiv(l, r, h->result.id);
             val_table[h->result.id] = res;
             break;
         }
 
         case MOD:
         {
-            auto *res = builder.back().CreateSRem(l, r, h->result.id);
+            auto *res = builder_stack.back().CreateSRem(l, r, h->result.id);
             val_table[h->result.id] = res;
             break;
         }
@@ -103,11 +107,11 @@ void print_lr(CodeNode *head)
         {
             if (h->result.kind)
             {
-                builder.back().CreateRet(val_table[h->result.id]);
+                builder_stack.back().CreateRet(val_table[h->result.id]);
             }
             else
             {
-                builder.back().CreateRetVoid();
+                builder_stack.back().CreateRetVoid();
             }
 
             break;
@@ -116,11 +120,6 @@ void print_lr(CodeNode *head)
         {
             const string &function_name = h->result.id;
             const int idx = searchSymbolTableWithFlag(function_name, 'F');
-            if (idx == -1)
-            {
-                // panic
-                exit(1);
-            }
 
             vector<Type *> parameters;
             for (int i = 0; i < symbol_table[idx].paramnum; i++)
@@ -149,8 +148,9 @@ void print_lr(CodeNode *head)
                 ptr++;
             }
             IRBuilder<> next_builder(next_block);
-            builder.push_back(next_builder);
-            block.push_back(next_block);
+            builder_stack.push_back(next_builder);
+            block_stack.push_back(next_block);
+            function_stack.push_back(function_value);
             break;
         }
         case CALL: {
@@ -160,7 +160,17 @@ void print_lr(CodeNode *head)
                 parameters.push_back(val_table[arg->result.id]);
             }
 
-            val_table[h->result.id] = builder.back().CreateCall(fn_type, fn, parameters, h->result.id);
+            val_table[h->result.id] = builder_stack.back().CreateCall(fn_type, fn, parameters, h->result.id);
+            break;
+        }
+
+        case LABEL: {
+            std::cout << h->result.id << std::endl;
+            BasicBlock *next_block = BasicBlock::Create(TheContext, h->result.id, function_stack.back());
+            block_stack.push_back(next_block);
+            builder_stack.push_back(IRBuilder<>(next_block));
+
+            label_table[h->result.id] = next_block;
             break;
         }
         }
