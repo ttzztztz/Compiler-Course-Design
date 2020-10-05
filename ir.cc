@@ -15,9 +15,8 @@
 using namespace llvm;
 
 extern vector<Symbol> symbol_table;
-extern vector<int> symbol_scope_chain_stack;
 
-Value *prepare_opn(LLVMContext &TheContext, unordered_map<string, Value *> &val_table, const struct Operation &op)
+Value *prepare_opn(LLVMContext &TheContext, unordered_map<string, Value *> &val_table, const Operation &op)
 {
     if (op.kind == INT)
     {
@@ -39,14 +38,10 @@ Value *prepare_opn(LLVMContext &TheContext, unordered_map<string, Value *> &val_
 void print_lr(CodeNode *head)
 {
     LLVMContext TheContext;
-    IRBuilder<> Builder(TheContext);
     Module TheModule("code", TheContext);
 
-    FunctionType *FT = FunctionType::get(Type::getVoidTy(TheContext), std::vector<Type *>{}, false);
-    Function *F = Function::Create(FT, Function::ExternalLinkage, "add_fn", TheModule);
-
-    BasicBlock *block = BasicBlock::Create(TheContext, "entry", F);
-    IRBuilder<> functionBuilder(block);
+    vector<BasicBlock*> block;
+    vector<IRBuilder<>> builder;
     unordered_map<string, Value *> val_table;
 
     CodeNode *h = head;
@@ -61,49 +56,85 @@ void print_lr(CodeNode *head)
         {
             string var_name(h->result.id);
 
-            auto *alloc = functionBuilder.CreateAlloca(Type::getInt32Ty(TheContext), nullptr, var_name);
-            auto *store = functionBuilder.CreateStore(l, alloc);
+            auto *alloc = builder.back().CreateAlloca(Type::getInt32Ty(TheContext), nullptr, var_name);
+            auto *store = builder.back().CreateStore(l, alloc);
             val_table[var_name] = alloc;
             break;
         }
 
         case PLUS:
         {
-            auto *res = functionBuilder.CreateAdd(l, r, h->result.id);
+            auto *res = builder.back().CreateAdd(l, r, h->result.id);
             val_table[h->result.id] = res;
             break;
         }
         case MINUS:
         {
-            auto *res = functionBuilder.CreateSub(l, r, h->result.id);
+            auto *res = builder.back().CreateSub(l, r, h->result.id);
             val_table[h->result.id] = res;
             break;
         }
         case STAR:
         {
-            auto *res = functionBuilder.CreateMul(l, r, h->result.id);
+            auto *res = builder.back().CreateMul(l, r, h->result.id);
             val_table[h->result.id] = res;
             break;
         }
         case DIV:
         {
-            auto *res = functionBuilder.CreateSDiv(l, r, h->result.id);
+            auto *res = builder.back().CreateSDiv(l, r, h->result.id);
             val_table[h->result.id] = res;
             break;
         }
         case MOD:
         {
-            auto *res = functionBuilder.CreateSRem(l, r, h->result.id);
+            auto *res = builder.back().CreateSRem(l, r, h->result.id);
             val_table[h->result.id] = res;
             break;
         }
         case RETURN:
-        { // todo: pop stack
+        {
             if (h->result.kind) {
-                functionBuilder.CreateRet(val_table[h->result.id]);
+                builder.back().CreateRet(val_table[h->result.id]);
             } else {
-                functionBuilder.CreateRetVoid();
+                builder.back().CreateRetVoid();
             }
+
+            // builder.pop_back();
+            // block.pop_back();
+            break;
+        }
+        case FUNCTION:
+        {
+            const string& function_name = h->result.id;
+            const int idx = searchSymbolTableWithFlag(function_name, 'F');
+            if (idx == -1) {
+                // panic
+                exit(1);
+            }
+
+            vector<Type*> parameters;
+            for (int i = 0; i < symbol_table[idx].paramnum; i++) {
+                const int offset = i + idx + 1;
+                if (symbol_table[offset].type == INT) {
+                    parameters.push_back(Type::getInt32Ty(TheContext));
+                } else if (symbol_table[offset].type == FLOAT) {
+                    parameters.push_back(Type::getFloatTy(TheContext));
+                }
+            }
+            Type* return_type = Type::getInt32Ty(TheContext);
+            FunctionType *function_type = FunctionType::get(return_type, parameters, false);
+            Function *function_value = Function::Create(function_type, Function::ExternalLinkage, function_name, TheModule);
+            BasicBlock *next_block = BasicBlock::Create(TheContext, "entry", function_value);
+
+            int ptr = idx + 1;
+            for (auto& arg : function_value->args()) {
+                arg.setName(symbol_table[ptr].name);
+                ptr++;
+            }
+            IRBuilder<> next_builder(next_block);
+            builder.push_back(next_builder);
+            block.push_back(next_block);
             break;
         }
         }

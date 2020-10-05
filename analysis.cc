@@ -26,7 +26,7 @@ string newTemp()
     return "t" + std::to_string(no++);
 }
 
-CodeNode *genIR(int op, struct Operation opn1, struct Operation opn2, struct Operation result)
+CodeNode *genIR(int op, Operation opn1, Operation opn2, Operation result)
 {
     CodeNode *h = new CodeNode();
     h->op = op;
@@ -37,7 +37,7 @@ CodeNode *genIR(int op, struct Operation opn1, struct Operation opn2, struct Ope
     return h;
 }
 
-CodeNode *genLabel(const string& label)
+CodeNode *genLabel(const string &label)
 {
     CodeNode *h = new CodeNode();
     h->op = LABEL;
@@ -46,7 +46,7 @@ CodeNode *genLabel(const string& label)
     return h;
 }
 
-CodeNode *genGoto(const string& label)
+CodeNode *genGoto(const string &label)
 {
     CodeNode *h = new CodeNode();
     h->op = GOTO;
@@ -98,10 +98,18 @@ void prn_symbol()
                symbol_table[i].flag, symbol_table[i].offset);
 }
 
-int searchSymbolTable(const string& name)
+int searchSymbolTable(const string &name)
 {
     for (int i = symbol_table.size() - 1; i >= 0; i--)
         if (symbol_table[i].name == name)
+            return i;
+    return -1;
+}
+
+int searchSymbolTableWithFlag(const string &name, char flag)
+{
+    for (int i = symbol_table.size() - 1; i >= 0; i--)
+        if (symbol_table[i].name == name && symbol_table[i].flag == flag)
             return i;
     return -1;
 }
@@ -206,7 +214,7 @@ int match_param(int i, ASTNode *T)
 
 void boolExp(ASTNode *T)
 {
-    struct Operation opn1, opn2, result;
+    Operation opn1, opn2, result;
     int op;
     int rtn;
     if (T)
@@ -288,7 +296,7 @@ void Exp(ASTNode *T)
 {
     int rtn, num, width;
     ASTNode *T0;
-    struct Operation opn1, opn2, result;
+    Operation opn1, opn2, result;
     if (T)
     {
         switch (T->kind)
@@ -459,7 +467,7 @@ void semantic_Analysis(ASTNode *T)
 {
     int rtn, num, width;
     ASTNode *T0;
-    struct Operation opn1, opn2, result;
+    Operation opn1, opn2, result;
     if (T)
     {
         switch (T->kind)
@@ -520,7 +528,9 @@ void semantic_Analysis(ASTNode *T)
                 T->code = merge(2, T->code, T->ptr[0]->code);
             }
             else
+            {
                 symbol_table[rtn].paramnum = 0, T->width = 0;
+            }
             break;
         case PARAM_LIST:
             T->ptr[0]->offset = T->offset;
@@ -551,7 +561,7 @@ void semantic_Analysis(ASTNode *T)
             result.kind = ID;
             result.id = symbol_table[rtn].alias;
             result.offset = T->offset;
-            T->code = genIR(PARAM, opn1, opn2, result);
+            // T->code = genIR(PARAM, opn1, opn2, result);
             break;
         case COMP_STM:
             LEV++;
