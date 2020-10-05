@@ -1,9 +1,9 @@
-int fn(int c, int c2, int c3, int c4, int c5) {
-    int tmp = 1 + 2;
+int add(int a, int b) {
+    return a + b;
+}
 
-    if (c == 1) {
-        return 1;
-    } else {
-        return 2;
-    }
+int fn(int c, int c2, int c3, int c4, int c5) {
+    int tmp = 1 + c2;
+    int tmp2 = add(tmp, c4);
+    return tmp2;
 }

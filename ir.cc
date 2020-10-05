@@ -13,6 +13,7 @@
 #include "def.h"
 
 using namespace llvm;
+using std::pair;
 
 extern vector<Symbol> symbol_table;
 
@@ -40,8 +41,9 @@ void print_lr(CodeNode *head)
     LLVMContext TheContext;
     Module TheModule("code", TheContext);
 
-    vector<BasicBlock*> block;
+    vector<BasicBlock *> block;
     vector<IRBuilder<>> builder;
+    unordered_map<string, pair<Function*, FunctionType*>> function_table;
     unordered_map<string, Value *> val_table;
 
     CodeNode *h = head;
@@ -68,73 +70,97 @@ void print_lr(CodeNode *head)
             val_table[h->result.id] = res;
             break;
         }
+
         case MINUS:
         {
             auto *res = builder.back().CreateSub(l, r, h->result.id);
             val_table[h->result.id] = res;
             break;
         }
+
         case STAR:
         {
             auto *res = builder.back().CreateMul(l, r, h->result.id);
             val_table[h->result.id] = res;
             break;
         }
+
         case DIV:
         {
             auto *res = builder.back().CreateSDiv(l, r, h->result.id);
             val_table[h->result.id] = res;
             break;
         }
+
         case MOD:
         {
             auto *res = builder.back().CreateSRem(l, r, h->result.id);
             val_table[h->result.id] = res;
             break;
         }
+
         case RETURN:
         {
-            if (h->result.kind) {
+            if (h->result.kind)
+            {
                 builder.back().CreateRet(val_table[h->result.id]);
-            } else {
+            }
+            else
+            {
                 builder.back().CreateRetVoid();
             }
 
-            // builder.pop_back();
-            // block.pop_back();
             break;
         }
         case FUNCTION:
         {
-            const string& function_name = h->result.id;
+            const string &function_name = h->result.id;
             const int idx = searchSymbolTableWithFlag(function_name, 'F');
-            if (idx == -1) {
+            if (idx == -1)
+            {
                 // panic
                 exit(1);
             }
 
-            vector<Type*> parameters;
-            for (int i = 0; i < symbol_table[idx].paramnum; i++) {
+            vector<Type *> parameters;
+            for (int i = 0; i < symbol_table[idx].paramnum; i++)
+            {
                 const int offset = i + idx + 1;
-                if (symbol_table[offset].type == INT) {
+                if (symbol_table[offset].type == INT)
+                {
                     parameters.push_back(Type::getInt32Ty(TheContext));
-                } else if (symbol_table[offset].type == FLOAT) {
+                }
+                else if (symbol_table[offset].type == FLOAT)
+                {
                     parameters.push_back(Type::getFloatTy(TheContext));
                 }
             }
-            Type* return_type = Type::getInt32Ty(TheContext);
+            Type *return_type = Type::getInt32Ty(TheContext);
             FunctionType *function_type = FunctionType::get(return_type, parameters, false);
             Function *function_value = Function::Create(function_type, Function::ExternalLinkage, function_name, TheModule);
             BasicBlock *next_block = BasicBlock::Create(TheContext, "entry", function_value);
 
+            function_table[function_name] = {function_value, function_type};
             int ptr = idx + 1;
-            for (auto& arg : function_value->args()) {
-                arg.setName(symbol_table[ptr].name);
+            for (auto &arg : function_value->args())
+            {
+                val_table[symbol_table[ptr].alias] = &arg;
+                arg.setName(symbol_table[ptr].alias);
                 ptr++;
             }
             IRBuilder<> next_builder(next_block);
             builder.push_back(next_builder);
             block.push_back(next_block);
+            break;
+        }
+        case CALL: {
+            auto [fn, fn_type] = function_table[h->opn1.id];
+            vector<Value*> parameters;
+            for (auto arg : h->data) {
+                parameters.push_back(val_table[arg->result.id]);
+            }
+
+            val_table[h->result.id] = builder.back().CreateCall(fn_type, fn, parameters, h->result.id);
             break;
         }
         }

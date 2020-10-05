@@ -30,6 +30,7 @@ class CodeNode
 {
 public:
     int op;
+    vector<CodeNode*> data;
     Operation opn1, opn2, result;
     CodeNode *next, *prior;
 };
@@ -66,7 +67,7 @@ public:
 };
 
 ASTNode *mknode(int num, int kind, int pos, ...);
-void semantic_Analysis0(ASTNode *T);
+void entrypoint(ASTNode *T);
 void boolExp(ASTNode *T);
 void Exp(ASTNode *T);
 void objectCode(CodeNode *head);
