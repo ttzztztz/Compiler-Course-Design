@@ -46,7 +46,7 @@ int yylex();
 
 %%
 
-program: ExtDefList    { display($1,0); semantic_Analysis0($1);}
+program: ExtDefList    { display($1,0); entrypoint($1);}
          ;
 ExtDefList: {$$=NULL;}
           | ExtDef ExtDefList {$$=mknode(2,EXT_DEF_LIST,yylineno,$1,$2);}

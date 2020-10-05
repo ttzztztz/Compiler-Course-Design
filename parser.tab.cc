@@ -1762,7 +1762,7 @@ yyreduce:
     {
   case 2:
 #line 49 "./parser.y"
-                       { display((yyvsp[0].ptr),0); semantic_Analysis0((yyvsp[0].ptr));}
+                       { display((yyvsp[0].ptr),0); entrypoint((yyvsp[0].ptr));}
 #line 1767 "parser.tab.c"
     break;
 
