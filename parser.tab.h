@@ -128,7 +128,7 @@ union YYSTYPE
 	int    type_int;
 	float  type_float;
 	char   type_id[32];
-	struct ASTNode *ptr;
+	class ASTNode *ptr;
 
 #line 134 "parser.tab.h"
 

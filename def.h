@@ -2,15 +2,20 @@
 
 #include "stdio.h"
 #include "stdlib.h"
-#include "string.h"
 #include "stdarg.h"
 #include "parser.tab.h"
 
-#define MAXLENGTH 200
+#include "string"
+#include "unordered_map"
+#include "vector"
+
+using std::string, std::unordered_map, std::vector;
+
 #define DX 3 * sizeof(int)
 
-struct opn
+class opn
 {
+public:
     int kind;
     int type;
     int const_int;
@@ -21,27 +26,26 @@ struct opn
     int offset;
 };
 
-struct codenode
+class codenode
 {
+public:
     int op;
     struct opn opn1, opn2, result;
-    struct codenode *next, *prior;
+    codenode *next, *prior;
 };
 
-struct ASTNode
+class ASTNode
 {
+public:
     int kind;
-    union
-    {
-        string type_id;
-        int type_int; 
-        float type_float; 
-    };
-    struct ASTNode *ptr[4];
+    string type_id;
+    int type_int; 
+    float type_float; 
+    ASTNode *ptr[4];
     int place;
     string Etrue, Efalse;
     string Snext;
-    struct codenode *code;
+    codenode *code;
     int type;
     int pos;
     int offset;
@@ -49,8 +53,9 @@ struct ASTNode
     int num;
 };
 
-struct symbol
+class symbol
 {
+public:
     string name;
     int level;
     int type;
@@ -60,9 +65,9 @@ struct symbol
     char offset;
 };
 
-struct ASTNode *mknode(int num, int kind, int pos, ...);
-void semantic_Analysis0(struct ASTNode *T);
-void boolExp(struct ASTNode *T);
-void Exp(struct ASTNode *T);
-void objectCode(struct codenode *head);
-void print_lr(struct codenode *head);
+ASTNode *mknode(int num, int kind, int pos, ...);
+void semantic_Analysis0(ASTNode *T);
+void boolExp(ASTNode *T);
+void Exp(ASTNode *T);
+void objectCode(codenode *head);
+void print_lr(codenode *head);

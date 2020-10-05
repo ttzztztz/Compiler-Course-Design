@@ -5,7 +5,7 @@
 #include "vector"
 
 using std::string, std::vector;
-vector<struct symbol> symbol_table;
+vector<symbol> symbol_table;
 vector<int> symbol_scope_chain_stack;
 
 string newAlias()
@@ -26,9 +26,9 @@ string newTemp()
     return "t" + std::to_string(no++);
 }
 
-struct codenode *genIR(int op, struct opn opn1, struct opn opn2, struct opn result)
+codenode *genIR(int op, struct opn opn1, struct opn opn2, struct opn result)
 {
-    struct codenode *h = (struct codenode *)malloc(sizeof(struct codenode));
+    codenode *h = new codenode();
     h->op = op;
     h->opn1 = opn1;
     h->opn2 = opn2;
@@ -37,33 +37,33 @@ struct codenode *genIR(int op, struct opn opn1, struct opn opn2, struct opn resu
     return h;
 }
 
-struct codenode *genLabel(const string& label)
+codenode *genLabel(const string& label)
 {
-    struct codenode *h = (struct codenode *)malloc(sizeof(struct codenode));
+    codenode *h = new codenode();
     h->op = LABEL;
     h->result.id = label;
     h->next = h->prior = h;
     return h;
 }
 
-struct codenode *genGoto(const string& label)
+codenode *genGoto(const string& label)
 {
-    struct codenode *h = (struct codenode *)malloc(sizeof(struct codenode));
+    codenode *h = new codenode();
     h->op = GOTO;
     h->result.id = label;
     h->next = h->prior = h;
     return h;
 }
 
-struct codenode *merge(int num, ...)
+codenode *merge(int num, ...)
 {
-    struct codenode *h1, *h2, *p, *t1, *t2;
+    codenode *h1, *h2, *p, *t1, *t2;
     va_list ap;
     va_start(ap, num);
-    h1 = va_arg(ap, struct codenode *);
+    h1 = va_arg(ap, codenode *);
     while (--num > 0)
     {
-        h2 = va_arg(ap, struct codenode *);
+        h2 = va_arg(ap, codenode *);
         if (h1 == nullptr)
             h1 = h2;
         else if (h2)
@@ -116,7 +116,7 @@ int fillSymbolTable(const string &name, const string &alias, int level, int type
             return -1;
     }
 
-    struct symbol sym{};
+    symbol sym{};
 
     sym.name = name;
     sym.alias = alias;
@@ -131,7 +131,7 @@ int fillSymbolTable(const string &name, const string &alias, int level, int type
 
 int fill_Temp(const string &name, int level, int type, char flag, int offset)
 {
-    struct symbol sym{};
+    symbol sym{};
 
     sym.name = "";
     sym.alias = name;
@@ -147,7 +147,7 @@ int fill_Temp(const string &name, int level, int type, char flag, int offset)
 int LEV = 0;
 int func_size;
 
-void ext_var_list(struct ASTNode *T)
+void ext_var_list(ASTNode *T)
 {
     int rtn, num = 1;
     switch (T->kind)
@@ -173,7 +173,7 @@ void ext_var_list(struct ASTNode *T)
     }
 }
 
-int match_param(int i, struct ASTNode *T)
+int match_param(int i, ASTNode *T)
 {
     int j, num = symbol_table[i].paramnum;
     int type1, type2, pos = T->pos;
@@ -204,7 +204,7 @@ int match_param(int i, struct ASTNode *T)
     return 1;
 }
 
-void boolExp(struct ASTNode *T)
+void boolExp(ASTNode *T)
 {
     struct opn opn1, opn2, result;
     int op;
@@ -284,10 +284,10 @@ void boolExp(struct ASTNode *T)
     }
 }
 
-void Exp(struct ASTNode *T)
+void Exp(ASTNode *T)
 {
     int rtn, num, width;
-    struct ASTNode *T0;
+    ASTNode *T0;
     struct opn opn1, opn2, result;
     if (T)
     {
@@ -455,10 +455,10 @@ void Exp(struct ASTNode *T)
     }
 }
 
-void semantic_Analysis(struct ASTNode *T)
+void semantic_Analysis(ASTNode *T)
 {
     int rtn, num, width;
-    struct ASTNode *T0;
+    ASTNode *T0;
     struct opn opn1, opn2, result;
     if (T)
     {
@@ -676,8 +676,8 @@ void semantic_Analysis(struct ASTNode *T)
             T->ptr[0]->offset = T->ptr[1]->offset = T->offset;
             boolExp(T->ptr[0]);
             T->width = T->ptr[0]->width;
-            T->ptr[1]->Snext = T->Snext);
-            semantic_Analysis(T->ptr[1];
+            T->ptr[1]->Snext = T->Snext;
+            semantic_Analysis(T->ptr[1]);
             if (T->width < T->ptr[1]->width)
                 T->width = T->ptr[1]->width;
             T->code = merge(3, T->ptr[0]->code, genLabel(T->ptr[0]->Etrue), T->ptr[1]->code);
@@ -700,12 +700,12 @@ void semantic_Analysis(struct ASTNode *T)
                             genGoto(T->Snext), genLabel(T->ptr[0]->Efalse), T->ptr[2]->code);
             break;
         case WHILE:
-            strcpy(T->ptr[0]->Etrue, newLabel().c_str());
-            strcpy(T->ptr[0]->Efalse, T->Snext);
+            T->ptr[0]->Etrue = newLabel();
+            T->ptr[0]->Efalse = T->Snext;
             T->ptr[0]->offset = T->ptr[1]->offset = T->offset;
             boolExp(T->ptr[0]);
             T->width = T->ptr[0]->width;
-            strcpy(T->ptr[1]->Snext, newLabel().c_str());
+            T->ptr[1]->Snext = newLabel();
             semantic_Analysis(T->ptr[1]);
             if (T->width < T->ptr[1]->width)
                 T->width = T->ptr[1]->width;
@@ -728,7 +728,7 @@ void semantic_Analysis(struct ASTNode *T)
 
                 T->width = T->ptr[0]->width;
                 result.kind = ID;
-                strcpy(result.id, symbol_table[T->ptr[0]->place].alias);
+                result.id = symbol_table[T->ptr[0]->place].alias;
                 result.offset = symbol_table[T->ptr[0]->place].offset;
                 T->code = merge(2, T->ptr[0]->code, genIR(RETURN, opn1, opn2, result));
             }
@@ -759,7 +759,7 @@ void semantic_Analysis(struct ASTNode *T)
     }
 }
 
-void semantic_Analysis0(struct ASTNode *T)
+void semantic_Analysis0(ASTNode *T)
 {
     T->offset = 0;
     semantic_Analysis(T);
