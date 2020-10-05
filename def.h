@@ -30,7 +30,7 @@ class CodeNode
 {
 public:
     int op;
-    struct Operation opn1, opn2, result;
+    Operation opn1, opn2, result;
     CodeNode *next, *prior;
 };
 
@@ -71,3 +71,4 @@ void boolExp(ASTNode *T);
 void Exp(ASTNode *T);
 void objectCode(CodeNode *head);
 void print_lr(CodeNode *head);
+int searchSymbolTableWithFlag(const string& name, char flag);
