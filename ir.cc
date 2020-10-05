@@ -14,10 +14,10 @@
 
 using namespace llvm;
 
-extern vector<symbol> symbol_table;
+extern vector<Symbol> symbol_table;
 extern vector<int> symbol_scope_chain_stack;
 
-Value *prepare_opn(LLVMContext &TheContext, unordered_map<string, Value *> &val_table, const struct opn &op)
+Value *prepare_opn(LLVMContext &TheContext, unordered_map<string, Value *> &val_table, const struct Operation &op)
 {
     if (op.kind == INT)
     {
@@ -36,7 +36,7 @@ Value *prepare_opn(LLVMContext &TheContext, unordered_map<string, Value *> &val_
     return nullptr;
 }
 
-void print_lr(codenode *head)
+void print_lr(CodeNode *head)
 {
     LLVMContext TheContext;
     IRBuilder<> Builder(TheContext);
@@ -49,7 +49,7 @@ void print_lr(codenode *head)
     IRBuilder<> functionBuilder(block);
     unordered_map<string, Value *> val_table;
 
-    codenode *h = head;
+    CodeNode *h = head;
     do
     {
         Value *val = nullptr;
