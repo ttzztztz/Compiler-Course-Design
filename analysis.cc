@@ -5,7 +5,7 @@
 #include "vector"
 
 using std::string, std::vector;
-vector<symbol> symbol_table;
+vector<Symbol> symbol_table;
 vector<int> symbol_scope_chain_stack;
 
 string newAlias()
@@ -26,9 +26,9 @@ string newTemp()
     return "t" + std::to_string(no++);
 }
 
-codenode *genIR(int op, struct opn opn1, struct opn opn2, struct opn result)
+CodeNode *genIR(int op, struct Operation opn1, struct Operation opn2, struct Operation result)
 {
-    codenode *h = new codenode();
+    CodeNode *h = new CodeNode();
     h->op = op;
     h->opn1 = opn1;
     h->opn2 = opn2;
@@ -37,33 +37,33 @@ codenode *genIR(int op, struct opn opn1, struct opn opn2, struct opn result)
     return h;
 }
 
-codenode *genLabel(const string& label)
+CodeNode *genLabel(const string& label)
 {
-    codenode *h = new codenode();
+    CodeNode *h = new CodeNode();
     h->op = LABEL;
     h->result.id = label;
     h->next = h->prior = h;
     return h;
 }
 
-codenode *genGoto(const string& label)
+CodeNode *genGoto(const string& label)
 {
-    codenode *h = new codenode();
+    CodeNode *h = new CodeNode();
     h->op = GOTO;
     h->result.id = label;
     h->next = h->prior = h;
     return h;
 }
 
-codenode *merge(int num, ...)
+CodeNode *merge(int num, ...)
 {
-    codenode *h1, *h2, *p, *t1, *t2;
+    CodeNode *h1, *h2, *p, *t1, *t2;
     va_list ap;
     va_start(ap, num);
-    h1 = va_arg(ap, codenode *);
+    h1 = va_arg(ap, CodeNode *);
     while (--num > 0)
     {
-        h2 = va_arg(ap, codenode *);
+        h2 = va_arg(ap, CodeNode *);
         if (h1 == nullptr)
             h1 = h2;
         else if (h2)
@@ -116,7 +116,7 @@ int fillSymbolTable(const string &name, const string &alias, int level, int type
             return -1;
     }
 
-    symbol sym{};
+    Symbol sym{};
 
     sym.name = name;
     sym.alias = alias;
@@ -131,7 +131,7 @@ int fillSymbolTable(const string &name, const string &alias, int level, int type
 
 int fill_Temp(const string &name, int level, int type, char flag, int offset)
 {
-    symbol sym{};
+    Symbol sym{};
 
     sym.name = "";
     sym.alias = name;
@@ -206,7 +206,7 @@ int match_param(int i, ASTNode *T)
 
 void boolExp(ASTNode *T)
 {
-    struct opn opn1, opn2, result;
+    struct Operation opn1, opn2, result;
     int op;
     int rtn;
     if (T)
@@ -288,7 +288,7 @@ void Exp(ASTNode *T)
 {
     int rtn, num, width;
     ASTNode *T0;
-    struct opn opn1, opn2, result;
+    struct Operation opn1, opn2, result;
     if (T)
     {
         switch (T->kind)
@@ -459,7 +459,7 @@ void semantic_Analysis(ASTNode *T)
 {
     int rtn, num, width;
     ASTNode *T0;
-    struct opn opn1, opn2, result;
+    struct Operation opn1, opn2, result;
     if (T)
     {
         switch (T->kind)

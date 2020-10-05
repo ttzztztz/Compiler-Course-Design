@@ -13,7 +13,7 @@ using std::string, std::unordered_map, std::vector;
 
 #define DX 3 * sizeof(int)
 
-class opn
+class Operation
 {
 public:
     int kind;
@@ -26,12 +26,12 @@ public:
     int offset;
 };
 
-class codenode
+class CodeNode
 {
 public:
     int op;
-    struct opn opn1, opn2, result;
-    codenode *next, *prior;
+    struct Operation opn1, opn2, result;
+    CodeNode *next, *prior;
 };
 
 class ASTNode
@@ -45,7 +45,7 @@ public:
     int place;
     string Etrue, Efalse;
     string Snext;
-    codenode *code;
+    CodeNode *code;
     int type;
     int pos;
     int offset;
@@ -53,7 +53,7 @@ public:
     int num;
 };
 
-class symbol
+class Symbol
 {
 public:
     string name;
@@ -69,5 +69,5 @@ ASTNode *mknode(int num, int kind, int pos, ...);
 void semantic_Analysis0(ASTNode *T);
 void boolExp(ASTNode *T);
 void Exp(ASTNode *T);
-void objectCode(codenode *head);
-void print_lr(codenode *head);
+void objectCode(CodeNode *head);
+void print_lr(CodeNode *head);
