@@ -1,28 +1,28 @@
 #include "def.h"
 #include "parser.tab.h"
 
-struct ASTNode *mknode(int num, int kind, int pos, ...)
+ASTNode *mknode(int num, int kind, int pos, ...)
 {
-    struct ASTNode *T = (struct ASTNode *)calloc(sizeof(struct ASTNode), 1);
+    ASTNode *T = new ASTNode();
     int i = 0;
     T->kind = kind;
     T->pos = pos;
     va_list pArgs;
     va_start(pArgs, pos);
     for (i = 0; i < num; i++)
-        T->ptr[i] = va_arg(pArgs, struct ASTNode *);
+        T->ptr[i] = va_arg(pArgs, ASTNode *);
     while (i < 4)
         T->ptr[i++] = nullptr;
     va_end(pArgs);
     return T;
 }
 
-void display(struct ASTNode *T, int indent)
+void display(ASTNode *T, int indent)
 {
     return;
 
     int i = 1;
-    struct ASTNode *T0;
+    ASTNode *T0;
     if (T)
     {
         switch (T->kind)
@@ -128,7 +128,7 @@ void display(struct ASTNode *T, int indent)
                 else if (T0->ptr[0]->kind == ASSIGNOP)
                 {
                     printf("%*c %s ASSIGNOP\n ", indent + 4, ' ', T0->ptr[0]->ptr[0]->type_id);
-                    display(T0->ptr[0]->ptr[1], indent + strlen(T0->ptr[0]->ptr[0]->type_id) + 7);
+                    display(T0->ptr[0]->ptr[1], indent + T0->ptr[0]->ptr[0]->type_id.size() + 7);
                 }
                 T0 = T0->ptr[1];
             }
@@ -169,7 +169,7 @@ void display(struct ASTNode *T, int indent)
             i = 1;
             while (T)
             {
-                struct ASTNode *T0 = T->ptr[0];
+                ASTNode *T0 = T->ptr[0];
                 printf("%*cParameter #%d Parameter Expression: \n", indent, ' ', i++);
                 display(T0, indent + 2);
                 T = T->ptr[1];

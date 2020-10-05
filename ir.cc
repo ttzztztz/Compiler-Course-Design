@@ -13,7 +13,9 @@
 #include "def.h"
 
 using namespace llvm;
-using std::string, std::unordered_map;
+
+extern vector<symbol> symbol_table;
+extern vector<int> symbol_scope_chain_stack;
 
 Value *prepare_opn(LLVMContext &TheContext, unordered_map<string, Value *> &val_table, const struct opn &op)
 {
@@ -34,7 +36,7 @@ Value *prepare_opn(LLVMContext &TheContext, unordered_map<string, Value *> &val_
     return nullptr;
 }
 
-void print_lr(struct codenode *head)
+void print_lr(codenode *head)
 {
     LLVMContext TheContext;
     IRBuilder<> Builder(TheContext);
@@ -47,7 +49,7 @@ void print_lr(struct codenode *head)
     IRBuilder<> functionBuilder(block);
     unordered_map<string, Value *> val_table;
 
-    struct codenode *h = head;
+    codenode *h = head;
     do
     {
         Value *val = nullptr;

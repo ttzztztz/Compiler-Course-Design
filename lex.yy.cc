@@ -812,12 +812,12 @@ do_action:	/* This label is used only to access EOF actions. */
 case 1:
 YY_RULE_SETUP
 #line 23 "./lex.l"
-{yylval.type_int=atoi(yytext); return INT;}
+{yylval.type_int = atoi(yytext); return INT;}
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
 #line 24 "./lex.l"
-{yylval.type_float=atof(yytext); return FLOAT;}
+{yylval.type_float = atof(yytext); return FLOAT;}
 	YY_BREAK
 case 3:
 YY_RULE_SETUP

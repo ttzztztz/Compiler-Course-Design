@@ -77,7 +77,7 @@ extern int yylineno;
 extern char *yytext;
 extern FILE *yyin;
 void yyerror(const char* fmt, ...);
-void display(struct ASTNode *,int);
+void display(ASTNode *,int);
 int yylex();
 
 #line 84 "parser.tab.c"
@@ -198,7 +198,7 @@ union YYSTYPE
 	int    type_int;
 	float  type_float;
 	char   type_id[32];
-	struct ASTNode *ptr;
+	class ASTNode *ptr;
 
 #line 204 "parser.tab.c"
 
@@ -1798,7 +1798,7 @@ yyreduce:
 
   case 8:
 #line 58 "./parser.y"
-                    {(yyval.ptr)=mknode(0,TYPE,yylineno);strcpy((yyval.ptr)->type_id,(yyvsp[0].type_id));(yyval.ptr)->type=!strcmp((yyvsp[0].type_id),"float")?FLOAT:INT;}
+                    {(yyval.ptr)=mknode(0,TYPE,yylineno);(yyval.ptr)->type_id = (yyvsp[0].type_id);(yyval.ptr)->type=((yyvsp[0].type_id) == "float")?FLOAT:INT;}
 #line 1803 "parser.tab.c"
     break;
 
@@ -1816,19 +1816,19 @@ yyreduce:
 
   case 11:
 #line 63 "./parser.y"
-                     {(yyval.ptr)=mknode(0,ID,yylineno);strcpy((yyval.ptr)->type_id,(yyvsp[0].type_id));}
+                     {(yyval.ptr)=mknode(0,ID,yylineno);(yyval.ptr)->type_id = (yyvsp[0].type_id);}
 #line 1821 "parser.tab.c"
     break;
 
   case 12:
 #line 65 "./parser.y"
-                            {(yyval.ptr)=mknode(1,FUNC_DEC,yylineno,(yyvsp[-1].ptr));strcpy((yyval.ptr)->type_id,(yyvsp[-3].type_id));}
+                            {(yyval.ptr)=mknode(1,FUNC_DEC,yylineno,(yyvsp[-1].ptr));(yyval.ptr)->type_id = (yyvsp[-3].type_id);}
 #line 1827 "parser.tab.c"
     break;
 
   case 13:
 #line 66 "./parser.y"
-                             {(yyval.ptr)=mknode(0,FUNC_DEC,yylineno);strcpy((yyval.ptr)->type_id,(yyvsp[-2].type_id));(yyval.ptr)->ptr[0]=NULL;}
+                             {(yyval.ptr)=mknode(0,FUNC_DEC,yylineno);(yyval.ptr)->type_id = (yyvsp[-2].type_id);(yyval.ptr)->ptr[0]=NULL;}
 #line 1833 "parser.tab.c"
     break;
 
@@ -1948,61 +1948,61 @@ yyreduce:
 
   case 33:
 #line 97 "./parser.y"
-                              {(yyval.ptr)=mknode(2,ASSIGNOP,yylineno,(yyvsp[-2].ptr),(yyvsp[0].ptr));strcpy((yyval.ptr)->type_id,"ASSIGNOP");}
+                              {(yyval.ptr)=mknode(2,ASSIGNOP,yylineno,(yyvsp[-2].ptr),(yyvsp[0].ptr));(yyval.ptr)->type_id = "ASSIGNOP";}
 #line 1953 "parser.tab.c"
     break;
 
   case 34:
 #line 99 "./parser.y"
-                         {(yyval.ptr)=mknode(2,ASSIGNOP,yylineno,(yyvsp[-2].ptr),(yyvsp[0].ptr));strcpy((yyval.ptr)->type_id,"ASSIGNOP");}
+                         {(yyval.ptr)=mknode(2,ASSIGNOP,yylineno,(yyvsp[-2].ptr),(yyvsp[0].ptr));(yyval.ptr)->type_id = "ASSIGNOP";}
 #line 1959 "parser.tab.c"
     break;
 
   case 35:
 #line 100 "./parser.y"
-                      {(yyval.ptr)=mknode(2,AND,yylineno,(yyvsp[-2].ptr),(yyvsp[0].ptr));strcpy((yyval.ptr)->type_id,"AND");}
+                      {(yyval.ptr)=mknode(2,AND,yylineno,(yyvsp[-2].ptr),(yyvsp[0].ptr));(yyval.ptr)->type_id = "AND";}
 #line 1965 "parser.tab.c"
     break;
 
   case 36:
 #line 101 "./parser.y"
-                      {(yyval.ptr)=mknode(2,OR,yylineno,(yyvsp[-2].ptr),(yyvsp[0].ptr));strcpy((yyval.ptr)->type_id,"OR");}
+                      {(yyval.ptr)=mknode(2,OR,yylineno,(yyvsp[-2].ptr),(yyvsp[0].ptr));(yyval.ptr)->type_id = "OR";}
 #line 1971 "parser.tab.c"
     break;
 
   case 37:
 #line 102 "./parser.y"
-                      {(yyval.ptr)=mknode(2,RELOP,yylineno,(yyvsp[-2].ptr),(yyvsp[0].ptr));strcpy((yyval.ptr)->type_id,(yyvsp[-1].type_id));}
+                      {(yyval.ptr)=mknode(2,RELOP,yylineno,(yyvsp[-2].ptr),(yyvsp[0].ptr));(yyval.ptr)->type_id = (yyvsp[-1].type_id);}
 #line 1977 "parser.tab.c"
     break;
 
   case 38:
 #line 103 "./parser.y"
-                      {(yyval.ptr)=mknode(2,PLUS,yylineno,(yyvsp[-2].ptr),(yyvsp[0].ptr));strcpy((yyval.ptr)->type_id,"PLUS");}
+                      {(yyval.ptr)=mknode(2,PLUS,yylineno,(yyvsp[-2].ptr),(yyvsp[0].ptr));(yyval.ptr)->type_id = "PLUS";}
 #line 1983 "parser.tab.c"
     break;
 
   case 39:
 #line 104 "./parser.y"
-                      {(yyval.ptr)=mknode(2,MINUS,yylineno,(yyvsp[-2].ptr),(yyvsp[0].ptr));strcpy((yyval.ptr)->type_id,"MINUS");}
+                      {(yyval.ptr)=mknode(2,MINUS,yylineno,(yyvsp[-2].ptr),(yyvsp[0].ptr));(yyval.ptr)->type_id = "MINUS";}
 #line 1989 "parser.tab.c"
     break;
 
   case 40:
 #line 105 "./parser.y"
-                      {(yyval.ptr)=mknode(2,STAR,yylineno,(yyvsp[-2].ptr),(yyvsp[0].ptr));strcpy((yyval.ptr)->type_id,"STAR");}
+                      {(yyval.ptr)=mknode(2,STAR,yylineno,(yyvsp[-2].ptr),(yyvsp[0].ptr));(yyval.ptr)->type_id = "STAR";}
 #line 1995 "parser.tab.c"
     break;
 
   case 41:
 #line 106 "./parser.y"
-                     {(yyval.ptr)=mknode(2,MOD,yylineno,(yyvsp[-2].ptr),(yyvsp[0].ptr));strcpy((yyval.ptr)->type_id,"MOD");}
+                     {(yyval.ptr)=mknode(2,MOD,yylineno,(yyvsp[-2].ptr),(yyvsp[0].ptr));(yyval.ptr)->type_id = "MOD";}
 #line 2001 "parser.tab.c"
     break;
 
   case 42:
 #line 107 "./parser.y"
-                      {(yyval.ptr)=mknode(2,DIV,yylineno,(yyvsp[-2].ptr),(yyvsp[0].ptr));strcpy((yyval.ptr)->type_id,"DIV");}
+                      {(yyval.ptr)=mknode(2,DIV,yylineno,(yyvsp[-2].ptr),(yyvsp[0].ptr));(yyval.ptr)->type_id = "DIV";}
 #line 2007 "parser.tab.c"
     break;
 
@@ -2014,43 +2014,43 @@ yyreduce:
 
   case 44:
 #line 109 "./parser.y"
-                                 {(yyval.ptr)=mknode(1,UMINUS,yylineno,(yyvsp[0].ptr));strcpy((yyval.ptr)->type_id,"UMINUS");}
+                                 {(yyval.ptr)=mknode(1,UMINUS,yylineno,(yyvsp[0].ptr));(yyval.ptr)->type_id = "UMINUS";}
 #line 2019 "parser.tab.c"
     break;
 
   case 45:
 #line 110 "./parser.y"
-                      {(yyval.ptr)=mknode(1,NOT,yylineno,(yyvsp[0].ptr));strcpy((yyval.ptr)->type_id,"NOT");}
+                      {(yyval.ptr)=mknode(1,NOT,yylineno,(yyvsp[0].ptr));(yyval.ptr)->type_id = "NOT";}
 #line 2025 "parser.tab.c"
     break;
 
   case 46:
 #line 111 "./parser.y"
-                        {(yyval.ptr)=mknode(1,DPLUS,yylineno,(yyvsp[0].ptr));strcpy((yyval.ptr)->type_id,"DPLUS");}
+                        {(yyval.ptr)=mknode(1,DPLUS,yylineno,(yyvsp[0].ptr));(yyval.ptr)->type_id = "DPLUS";}
 #line 2031 "parser.tab.c"
     break;
 
   case 47:
 #line 112 "./parser.y"
-                         {(yyval.ptr)=mknode(1,DPLUS,yylineno,(yyvsp[-1].ptr));strcpy((yyval.ptr)->type_id,"DPLUS");}
+                         {(yyval.ptr)=mknode(1,DPLUS,yylineno,(yyvsp[-1].ptr));(yyval.ptr)->type_id = "DPLUS";}
 #line 2037 "parser.tab.c"
     break;
 
   case 48:
 #line 113 "./parser.y"
-                      {(yyval.ptr)=mknode(1,FUNC_CALL,yylineno,(yyvsp[-1].ptr));strcpy((yyval.ptr)->type_id,(yyvsp[-3].type_id));}
+                      {(yyval.ptr)=mknode(1,FUNC_CALL,yylineno,(yyvsp[-1].ptr));(yyval.ptr)->type_id = (yyvsp[-3].type_id);}
 #line 2043 "parser.tab.c"
     break;
 
   case 49:
 #line 114 "./parser.y"
-                      {(yyval.ptr)=mknode(0,FUNC_CALL,yylineno);strcpy((yyval.ptr)->type_id,(yyvsp[-2].type_id));}
+                      {(yyval.ptr)=mknode(0,FUNC_CALL,yylineno);(yyval.ptr)->type_id = (yyvsp[-2].type_id);}
 #line 2049 "parser.tab.c"
     break;
 
   case 50:
 #line 115 "./parser.y"
-                      {(yyval.ptr)=mknode(0,ID,yylineno);strcpy((yyval.ptr)->type_id,(yyvsp[0].type_id));}
+                      {(yyval.ptr)=mknode(0,ID,yylineno);(yyval.ptr)->type_id = (yyvsp[0].type_id);}
 #line 2055 "parser.tab.c"
     break;
 

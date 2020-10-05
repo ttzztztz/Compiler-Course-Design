@@ -9,7 +9,7 @@ extern int yylineno;
 extern char *yytext;
 extern FILE *yyin;
 void yyerror(const char* fmt, ...);
-void display(struct ASTNode *,int);
+void display(ASTNode *,int);
 int yylex();
 %}
 
@@ -17,7 +17,7 @@ int yylex();
 	int    type_int;
 	float  type_float;
 	char   type_id[32];
-	struct ASTNode *ptr;
+	class ASTNode *ptr;
 };
 
 %type  <ptr> program ExtDefList ExtDef  Specifier ExtDecList FuncDec CompSt VarList VarDec ParamDec Stmt StmList DefList Def DecList Dec Exp Args
@@ -55,15 +55,15 @@ ExtDef:   Specifier ExtDecList SEMI   {$$=mknode(2,EXT_VAR_DEF,yylineno,$1,$2);}
          |Specifier FuncDec CompSt    {$$=mknode(3,FUNC_DEF,yylineno,$1,$2,$3);}
          | error SEMI   {$$=NULL;}
          ;
-Specifier:  TYPE    {$$=mknode(0,TYPE,yylineno);strcpy($$->type_id,$1);$$->type=!strcmp($1,"float")?FLOAT:INT;}   
+Specifier:  TYPE    {$$=mknode(0,TYPE,yylineno);$$->type_id = $1;$$->type=($1 == "float")?FLOAT:INT;}   
            ;
 ExtDecList:  VarDec      {$$=$1;}
            | VarDec COMMA ExtDecList {$$=mknode(2,EXT_DEC_LIST,yylineno,$1,$3);}
            ;  
-VarDec:  ID          {$$=mknode(0,ID,yylineno);strcpy($$->type_id,$1);}
+VarDec:  ID          {$$=mknode(0,ID,yylineno);$$->type_id = $1;}
          ;
-FuncDec: ID LP VarList RP   {$$=mknode(1,FUNC_DEC,yylineno,$3);strcpy($$->type_id,$1);}
-		|ID LP  RP   {$$=mknode(0,FUNC_DEC,yylineno);strcpy($$->type_id,$1);$$->ptr[0]=NULL;}
+FuncDec: ID LP VarList RP   {$$=mknode(1,FUNC_DEC,yylineno,$3);$$->type_id = $1;}
+		|ID LP  RP   {$$=mknode(0,FUNC_DEC,yylineno);$$->type_id = $1;$$->ptr[0]=NULL;}
 
         ;  
 VarList: ParamDec  {$$=mknode(1,PARAM_LIST,yylineno,$1);}
@@ -94,25 +94,25 @@ DecList: Dec  {$$=mknode(1,DEC_LIST,yylineno,$1);}
        | Dec COMMA DecList  {$$=mknode(2,DEC_LIST,yylineno,$1,$3);}
 	   ;
 Dec:     VarDec  {$$=$1;}
-       | VarDec ASSIGNOP Exp  {$$=mknode(2,ASSIGNOP,yylineno,$1,$3);strcpy($$->type_id,"ASSIGNOP");}
+       | VarDec ASSIGNOP Exp  {$$=mknode(2,ASSIGNOP,yylineno,$1,$3);$$->type_id = "ASSIGNOP";}
        ;
-Exp:    Exp ASSIGNOP Exp {$$=mknode(2,ASSIGNOP,yylineno,$1,$3);strcpy($$->type_id,"ASSIGNOP");}
-      | Exp AND Exp   {$$=mknode(2,AND,yylineno,$1,$3);strcpy($$->type_id,"AND");}
-      | Exp OR Exp    {$$=mknode(2,OR,yylineno,$1,$3);strcpy($$->type_id,"OR");}
-      | Exp RELOP Exp {$$=mknode(2,RELOP,yylineno,$1,$3);strcpy($$->type_id,$2);}
-      | Exp PLUS Exp  {$$=mknode(2,PLUS,yylineno,$1,$3);strcpy($$->type_id,"PLUS");}
-      | Exp MINUS Exp {$$=mknode(2,MINUS,yylineno,$1,$3);strcpy($$->type_id,"MINUS");}
-      | Exp STAR Exp  {$$=mknode(2,STAR,yylineno,$1,$3);strcpy($$->type_id,"STAR");}
-      | Exp MOD Exp  {$$=mknode(2,MOD,yylineno,$1,$3);strcpy($$->type_id,"MOD");}
-      | Exp DIV Exp   {$$=mknode(2,DIV,yylineno,$1,$3);strcpy($$->type_id,"DIV");}
+Exp:    Exp ASSIGNOP Exp {$$=mknode(2,ASSIGNOP,yylineno,$1,$3);$$->type_id = "ASSIGNOP";}
+      | Exp AND Exp   {$$=mknode(2,AND,yylineno,$1,$3);$$->type_id = "AND";}
+      | Exp OR Exp    {$$=mknode(2,OR,yylineno,$1,$3);$$->type_id = "OR";}
+      | Exp RELOP Exp {$$=mknode(2,RELOP,yylineno,$1,$3);$$->type_id = $2;}
+      | Exp PLUS Exp  {$$=mknode(2,PLUS,yylineno,$1,$3);$$->type_id = "PLUS";}
+      | Exp MINUS Exp {$$=mknode(2,MINUS,yylineno,$1,$3);$$->type_id = "MINUS";}
+      | Exp STAR Exp  {$$=mknode(2,STAR,yylineno,$1,$3);$$->type_id = "STAR";}
+      | Exp MOD Exp  {$$=mknode(2,MOD,yylineno,$1,$3);$$->type_id = "MOD";}
+      | Exp DIV Exp   {$$=mknode(2,DIV,yylineno,$1,$3);$$->type_id = "DIV";}
       | LP Exp RP     {$$=$2;}
-      | MINUS Exp %prec UMINUS   {$$=mknode(1,UMINUS,yylineno,$2);strcpy($$->type_id,"UMINUS");}
-      | NOT Exp       {$$=mknode(1,NOT,yylineno,$2);strcpy($$->type_id,"NOT");}
-      | DPLUS  Exp      {$$=mknode(1,DPLUS,yylineno,$2);strcpy($$->type_id,"DPLUS");}
-      |   Exp DPLUS      {$$=mknode(1,DPLUS,yylineno,$1);strcpy($$->type_id,"DPLUS");}
-      | ID LP Args RP {$$=mknode(1,FUNC_CALL,yylineno,$3);strcpy($$->type_id,$1);}
-      | ID LP RP      {$$=mknode(0,FUNC_CALL,yylineno);strcpy($$->type_id,$1);}
-      | ID            {$$=mknode(0,ID,yylineno);strcpy($$->type_id,$1);}
+      | MINUS Exp %prec UMINUS   {$$=mknode(1,UMINUS,yylineno,$2);$$->type_id = "UMINUS";}
+      | NOT Exp       {$$=mknode(1,NOT,yylineno,$2);$$->type_id = "NOT";}
+      | DPLUS  Exp      {$$=mknode(1,DPLUS,yylineno,$2);$$->type_id = "DPLUS";}
+      |   Exp DPLUS      {$$=mknode(1,DPLUS,yylineno,$1);$$->type_id = "DPLUS";}
+      | ID LP Args RP {$$=mknode(1,FUNC_CALL,yylineno,$3);$$->type_id = $1;}
+      | ID LP RP      {$$=mknode(0,FUNC_CALL,yylineno);$$->type_id = $1;}
+      | ID            {$$=mknode(0,ID,yylineno);$$->type_id = $1;}
       | INT           {$$=mknode(0,INT,yylineno);$$->type_int=$1;$$->type=INT;}
       | FLOAT         {$$=mknode(0,FLOAT,yylineno);$$->type_float=$1;$$->type=FLOAT;}
       ;
