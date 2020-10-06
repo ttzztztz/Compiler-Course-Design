@@ -1,27 +1,26 @@
 #include "def.h"
 #include "parser.tab.h"
 
-ASTNode *make_node(int num, int kind, int pos, ...)
+ASTNode *make_node(int kind, int pos, vector<ASTNode*> nodes)
 {
     ASTNode *T = new ASTNode();
-    int i = 0;
     T->kind = kind;
     T->pos = pos;
-    va_list pArgs;
-    va_start(pArgs, pos);
-    for (i = 0; i < num; i++)
-        T->ptr[i] = va_arg(pArgs, ASTNode *);
+
+    int i = 0;
+    for (i = 0; i < nodes.size(); i++)
+        T->ptr[i] = nodes[i];
     while (i < 4)
         T->ptr[i++] = nullptr;
-    va_end(pArgs);
+
     return T;
 }
 
 void display(ASTNode *T, int indent)
 {
-    #if PRINT_AST == 0
+#if PRINT_AST == 0
     return;
-    #endif
+#endif
 
     int i = 1;
     ASTNode *T0;
@@ -113,7 +112,7 @@ void display(ASTNode *T, int indent)
             break;
         case DEF_LIST:
             display(T->ptr[0], indent);
-            display(T->ptr[1], indent); 
+            display(T->ptr[1], indent);
             break;
         case VAR_DEF:
             printf("%*cVariable Decl: (%d)\n", indent, ' ', T->pos);
