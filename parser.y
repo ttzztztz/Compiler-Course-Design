@@ -55,15 +55,15 @@ ExtDef:   Specifier ExtDecList SEMI   {$$=make_node(EXT_VAR_DEF,yylineno,{$1,$2}
          |Specifier FuncDec CompSt    {$$=make_node(FUNC_DEF,yylineno,{$1,$2,$3});}
          | error SEMI   {$$=NULL;}
          ;
-Specifier:  TYPE    {$$=make_node(TYPE,yylineno);$$->type_id = $1;$$->type=($1 == "float")?FLOAT:INT;}   
+Specifier:  TYPE    {$$=make_node(TYPE,yylineno);$$->data = $1;$$->type=($1 == "float")?FLOAT:INT;}   
            ;
 ExtDecList:  VarDec      {$$=$1;}
            | VarDec COMMA ExtDecList {$$=make_node(EXT_DEC_LIST,yylineno,{$1,$3});}
            ;  
-VarDec:  ID          {$$=make_node(ID,yylineno);$$->type_id = $1;}
+VarDec:  ID          {$$=make_node(ID,yylineno);$$->data = $1;}
          ;
-FuncDec: ID LP VarList RP   {$$=make_node(FUNC_DEC,yylineno,{$3});$$->type_id = $1;}
-		|ID LP  RP   {$$=make_node(FUNC_DEC,yylineno);$$->type_id = $1;$$->ptr[0]=NULL;}
+FuncDec: ID LP VarList RP   {$$=make_node(FUNC_DEC,yylineno,{$3});$$->data = $1;}
+		|ID LP  RP   {$$=make_node(FUNC_DEC,yylineno);$$->data = $1;$$->ptr[0]=NULL;}
 
         ;
 VarList: ParamDec  {$$=make_node(PARAM_LIST,yylineno,{$1});}
@@ -95,27 +95,27 @@ DecList: Dec  {$$=make_node(DEC_LIST,yylineno,{$1});}
        | Dec COMMA DecList  {$$=make_node(DEC_LIST,yylineno,{$1,$3});}
 	   ;
 Dec:     VarDec  {$$=$1;}
-       | VarDec ASSIGNOP Exp  {$$=make_node(ASSIGNOP,yylineno,{$1,$3});$$->type_id = "ASSIGNOP";}
+       | VarDec ASSIGNOP Exp  {$$=make_node(ASSIGNOP,yylineno,{$1,$3});$$->data = "ASSIGNOP";}
        ;
-Exp:    Exp ASSIGNOP Exp {$$=make_node(ASSIGNOP,yylineno,{$1,$3});$$->type_id = "ASSIGNOP";}
-      | Exp AND Exp   {$$=make_node(AND,yylineno,{$1,$3});$$->type_id = "AND";}
-      | Exp OR Exp    {$$=make_node(OR,yylineno,{$1,$3});$$->type_id = "OR";}
-      | Exp RELOP Exp {$$=make_node(RELOP,yylineno,{$1,$3});$$->type_id = $2;}
-      | Exp PLUS Exp  {$$=make_node(PLUS,yylineno,{$1,$3});$$->type_id = "PLUS";}
-      | Exp MINUS Exp {$$=make_node(MINUS,yylineno,{$1,$3});$$->type_id = "MINUS";}
-      | Exp STAR Exp  {$$=make_node(STAR,yylineno,{$1,$3});$$->type_id = "STAR";}
-      | Exp MOD Exp  {$$=make_node(MOD,yylineno,{$1,$3});$$->type_id = "MOD";}
-      | Exp DIV Exp   {$$=make_node(DIV,yylineno,{$1,$3});$$->type_id = "DIV";}
+Exp:    Exp ASSIGNOP Exp {$$=make_node(ASSIGNOP,yylineno,{$1,$3});$$->data = "ASSIGNOP";}
+      | Exp AND Exp   {$$=make_node(AND,yylineno,{$1,$3});$$->data = "AND";}
+      | Exp OR Exp    {$$=make_node(OR,yylineno,{$1,$3});$$->data = "OR";}
+      | Exp RELOP Exp {$$=make_node(RELOP,yylineno,{$1,$3});$$->data = $2;}
+      | Exp PLUS Exp  {$$=make_node(PLUS,yylineno,{$1,$3});$$->data = "PLUS";}
+      | Exp MINUS Exp {$$=make_node(MINUS,yylineno,{$1,$3});$$->data = "MINUS";}
+      | Exp STAR Exp  {$$=make_node(STAR,yylineno,{$1,$3});$$->data = "STAR";}
+      | Exp MOD Exp  {$$=make_node(MOD,yylineno,{$1,$3});$$->data = "MOD";}
+      | Exp DIV Exp   {$$=make_node(DIV,yylineno,{$1,$3});$$->data = "DIV";}
       | LP Exp RP     {$$=$2;}
-      | MINUS Exp %prec UMINUS   {$$=make_node(UMINUS,yylineno,{$2});$$->type_id = "UMINUS";}
-      | NOT Exp       {$$=make_node(NOT,yylineno,{$2});$$->type_id = "NOT";}
-      | DPLUS  Exp      {$$=make_node(DPLUS,yylineno,{$2});$$->type_id = "DPLUS";}
-      |   Exp DPLUS      {$$=make_node(DPLUS,yylineno,{$1});$$->type_id = "DPLUS";}
-      | ID LP Args RP {$$=make_node(FUNC_CALL,yylineno,{$3});$$->type_id = $1;}
-      | ID LP RP      {$$=make_node(FUNC_CALL,yylineno);$$->type_id = $1;}
-      | ID            {$$=make_node(ID,yylineno);$$->type_id = $1;}
-      | INT           {$$=make_node(INT,yylineno);$$->type_int=$1;$$->type=INT;}
-      | FLOAT         {$$=make_node(FLOAT,yylineno);$$->type_float=$1;$$->type=FLOAT;}
+      | MINUS Exp %prec UMINUS   {$$=make_node(UMINUS,yylineno,{$2});$$->data = "UMINUS";}
+      | NOT Exp       {$$=make_node(NOT,yylineno,{$2});$$->data = "NOT";}
+      | DPLUS  Exp      {$$=make_node(DPLUS,yylineno,{$2});$$->data = "DPLUS";}
+      |   Exp DPLUS      {$$=make_node(DPLUS,yylineno,{$1});$$->data = "DPLUS";}
+      | ID LP Args RP {$$=make_node(FUNC_CALL,yylineno,{$3});$$->data = $1;}
+      | ID LP RP      {$$=make_node(FUNC_CALL,yylineno);$$->data = $1;}
+      | ID            {$$=make_node(ID,yylineno);$$->data = $1;}
+      | INT           {$$=make_node(INT,yylineno);$$->data=$1;$$->type=INT;}
+      | FLOAT         {$$=make_node(FLOAT,yylineno);$$->data=$1;$$->type=FLOAT;}
       ;
 Args:    Exp COMMA Args    {$$=make_node(ARGS,yylineno,{$1,$3});}
        | Exp               {$$=make_node(ARGS,yylineno,{$1});}

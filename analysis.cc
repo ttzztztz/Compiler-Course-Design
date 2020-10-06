@@ -41,7 +41,7 @@ CodeNode *generate_label(const string &label)
 {
     CodeNode *h = new CodeNode();
     h->op = LABEL;
-    h->result.id = label;
+    h->result.data = label;
     h->next = h->prior = h;
     return h;
 }
@@ -50,7 +50,7 @@ CodeNode *generate_goto(const string &label)
 {
     CodeNode *h = new CodeNode();
     h->op = GOTO;
-    h->result.id = label;
+    h->result.data = label;
     h->next = h->prior = h;
     return h;
 }
@@ -172,9 +172,9 @@ void ext_var_list(ASTNode *T)
         T->num = T->ptr[1]->num + 1;
         break;
     case ID:
-        rtn = fill_symbol_table(T->type_id, new_alias(), LEV, T->type, 'V', T->offset);
+        rtn = fill_symbol_table(get<string>(T->data), new_alias(), LEV, T->type, 'V', T->offset);
         if (rtn == -1)
-            semantic_error(T->pos, T->type_id, "Redecl Variable");
+            semantic_error(T->pos, get<string>(T->data), "Redecl Variable");
         else
             T->place = rtn;
         T->num = 1;
@@ -236,24 +236,24 @@ void bool_expression(ASTNode *T)
             if (T->width < T->ptr[1]->width)
                 T->width = T->ptr[1]->width;
             opn1.kind = ID;
-            opn1.id = symbol_table[T->ptr[0]->place].alias;
+            opn1.data = symbol_table[T->ptr[0]->place].alias;
             opn1.offset = symbol_table[T->ptr[0]->place].offset;
             opn2.kind = ID;
-            opn2.id = symbol_table[T->ptr[1]->place].alias;
+            opn2.data = symbol_table[T->ptr[1]->place].alias;
             opn2.offset = symbol_table[T->ptr[1]->place].offset;
             result.kind = ID;
-            result.id = T->Etrue;
-            if (T->type_id == "<")
+            result.data = T->Etrue;
+            if (get<string>(T->data) == "<")
                 op = JLT;
-            else if (T->type_id == "<=")
+            else if (get<string>(T->data) == "<=")
                 op = JLE;
-            else if (T->type_id == ">")
+            else if (get<string>(T->data) == ">")
                 op = JGT;
-            else if (T->type_id == ">=")
+            else if (get<string>(T->data) == ">=")
                 op = JGE;
-            else if (T->type_id == "==")
+            else if (get<string>(T->data) == "==")
                 op = EQ;
-            else if (T->type_id == "!=")
+            else if (get<string>(T->data) == "!=")
                 op = NEQ;
             T->code = generate_code_node(op, opn1, opn2, result);
             T->code->data.push_back(generate_goto(T->Efalse));
@@ -304,11 +304,11 @@ void expression(ASTNode *T)
         switch (T->kind)
         {
         case ID:
-            rtn = search_symbol_table(T->type_id);
+            rtn = search_symbol_table(get<string>(T->data));
             if (rtn == -1)
-                semantic_error(T->pos, T->type_id, "Variable not declared.");
+                semantic_error(T->pos, get<string>(T->data), "Variable not declared.");
             if (symbol_table[rtn].flag == 'F')
-                semantic_error(T->pos, T->type_id, "Type doesn't match.");
+                semantic_error(T->pos, get<string>(T->data), "Type doesn't match.");
             else
             {
                 T->place = rtn;
@@ -322,9 +322,9 @@ void expression(ASTNode *T)
             T->place = fill_temp_var(new_temp(), LEV, T->type, 'T', T->offset);
             T->type = INT;
             opn1.kind = INT;
-            opn1.const_int = T->type_int;
+            opn1.data = T->data;
             result.kind = ID;
-            result.id = symbol_table[T->place].alias;
+            result.data = symbol_table[T->place].alias;
             result.offset = symbol_table[T->place].offset;
             T->code = generate_code_node(ASSIGNOP, opn1, opn2, result);
             T->width = 4;
@@ -333,9 +333,9 @@ void expression(ASTNode *T)
             T->place = fill_temp_var(new_temp(), LEV, T->type, 'T', T->offset);
             T->type = FLOAT;
             opn1.kind = FLOAT;
-            opn1.const_float = T->type_float;
+            opn1.data = T->data;
             result.kind = ID;
-            result.id = symbol_table[T->place].alias;
+            result.data = symbol_table[T->place].alias;
             result.offset = symbol_table[T->place].offset;
             T->code = generate_code_node(ASSIGNOP, opn1, opn2, result);
             T->width = 4;
@@ -354,10 +354,10 @@ void expression(ASTNode *T)
                 T->width = T->ptr[1]->width;
                 T->code = merge_code_node({T->ptr[0]->code, T->ptr[1]->code});
                 opn1.kind = ID;
-                opn1.id = symbol_table[T->ptr[1]->place].alias;
+                opn1.data = symbol_table[T->ptr[1]->place].alias;
                 opn1.offset = symbol_table[T->ptr[1]->place].offset;
                 result.kind = ID;
-                result.id = symbol_table[T->ptr[0]->place].alias;
+                result.data = symbol_table[T->ptr[0]->place].alias;
                 result.offset = symbol_table[T->ptr[0]->place].offset;
                 T->code = merge_code_node({T->code, generate_code_node(ASSIGNOP, opn1, opn2, result)});
             }
@@ -385,15 +385,15 @@ void expression(ASTNode *T)
                 T->type = INT, T->width = T->ptr[0]->width + T->ptr[1]->width + 2;
             T->place = fill_temp_var(new_temp(), LEV, T->type, 'T', T->offset + T->ptr[0]->width + T->ptr[1]->width);
             opn1.kind = ID;
-            opn1.id = symbol_table[T->ptr[0]->place].alias;
+            opn1.data = symbol_table[T->ptr[0]->place].alias;
             opn1.type = T->ptr[0]->type;
             opn1.offset = symbol_table[T->ptr[0]->place].offset;
             opn2.kind = ID;
-            opn2.id = symbol_table[T->ptr[1]->place].alias;
+            opn2.data = symbol_table[T->ptr[1]->place].alias;
             opn2.type = T->ptr[1]->type;
             opn2.offset = symbol_table[T->ptr[1]->place].offset;
             result.kind = ID;
-            result.id = symbol_table[T->place].alias;
+            result.data = symbol_table[T->place].alias;
             result.type = T->type;
             result.offset = symbol_table[T->place].offset;
             T->code = merge_code_node({T->ptr[0]->code, T->ptr[1]->code, generate_code_node(T->kind, opn1, opn2, result)});
@@ -406,15 +406,15 @@ void expression(ASTNode *T)
         case FUNC_CALL:
         {
             vector<CodeNode *> call_args;
-            rtn = search_symbol_table(T->type_id);
+            rtn = search_symbol_table(get<string>(T->data));
             if (rtn == -1)
             {
-                semantic_error(T->pos, T->type_id, "Function not declared.");
+                semantic_error(T->pos, get<string>(T->data), "Function not declared.");
                 break;
             }
             if (symbol_table[rtn].flag != 'F')
             {
-                semantic_error(T->pos, T->type_id, "Not a function!");
+                semantic_error(T->pos, get<string>(T->data), "Not a function!");
                 break;
             }
             T->type = symbol_table[rtn].type;
@@ -436,17 +436,17 @@ void expression(ASTNode *T)
             while (T0)
             {
                 result.kind = ID;
-                result.id = symbol_table[T0->ptr[0]->place].alias;
+                result.data = symbol_table[T0->ptr[0]->place].alias;
                 result.offset = symbol_table[T0->ptr[0]->place].offset;
                 call_args.push_back(generate_code_node(ARG, opn1, opn2, result));
                 T0 = T0->ptr[1];
             }
             T->place = fill_temp_var(new_temp(), LEV, T->type, 'T', T->offset + T->width - width);
             opn1.kind = ID;
-            opn1.id = T->type_id;
+            opn1.data = T->data;
             opn1.offset = rtn;
             result.kind = ID;
-            result.id = symbol_table[T->place].alias;
+            result.data = symbol_table[T->place].alias;
             result.offset = symbol_table[T->place].offset;
 
             auto *call_code_node = generate_code_node(CALL, opn1, opn2, result);
@@ -495,7 +495,7 @@ void semantic_analysis(ASTNode *T)
             }
             break;
         case EXT_VAR_DEF:
-            T->type = T->ptr[1]->type = T->ptr[0]->type_id == "int" ? INT : FLOAT;
+            T->type = T->ptr[1]->type = get<string>(T->ptr[0]->data) == "int" ? INT : FLOAT;
             T->ptr[1]->offset = T->offset;
             T->ptr[1]->width = T->type == INT ? 4 : 8;
             ext_var_list(T->ptr[1]);
@@ -503,7 +503,7 @@ void semantic_analysis(ASTNode *T)
             T->code = nullptr;
             break;
         case FUNC_DEF:
-            T->ptr[1]->type = T->ptr[0]->type_id == "int" ? INT : FLOAT;
+            T->ptr[1]->type = get<string>(T->ptr[0]->data) == "int" ? INT : FLOAT;
             T->width = 0;
             T->offset = DX;
             semantic_analysis(T->ptr[1]);
@@ -515,16 +515,16 @@ void semantic_analysis(ASTNode *T)
             T->code = merge_code_node({T->ptr[1]->code, T->ptr[2]->code, generate_label(T->ptr[2]->Snext)});
             break;
         case FUNC_DEC:
-            rtn = fill_symbol_table(T->type_id, new_alias(), LEV, T->type, 'F', 0);
+            rtn = fill_symbol_table(get<string>(T->data), new_alias(), LEV, T->type, 'F', 0);
             if (rtn == -1)
             {
-                semantic_error(T->pos, T->type_id, "Function Redeclaration.");
+                semantic_error(T->pos, get<string>(T->data), "Function Redeclaration.");
                 break;
             }
             else
                 T->place = rtn;
             result.kind = ID;
-            result.id = T->type_id;
+            result.data = T->data;
             result.offset = rtn;
             T->code = generate_code_node(FUNCTION, opn1, opn2, result);
             T->offset = DX;
@@ -560,15 +560,15 @@ void semantic_analysis(ASTNode *T)
             }
             break;
         case PARAM_DEC:
-            rtn = fill_symbol_table(T->ptr[1]->type_id, new_alias(), 1, T->ptr[0]->type, 'P', T->offset);
+            rtn = fill_symbol_table(get<string>(T->ptr[1]->data), new_alias(), 1, T->ptr[0]->type, 'P', T->offset);
             if (rtn == -1)
-                semantic_error(T->ptr[1]->pos, T->ptr[1]->type_id, "Function Parameter name re-declaration.");
+                semantic_error(T->ptr[1]->pos, get<string>(T->ptr[1]->data), "Function Parameter name re-declaration.");
             else
                 T->ptr[1]->place = rtn;
             T->num = 1;
             T->width = T->ptr[0]->type == INT ? 4 : 8;
             result.kind = ID;
-            result.id = symbol_table[rtn].alias;
+            result.data = symbol_table[rtn].alias;
             result.offset = T->offset;
             // T->code = generate_code_node(PARAM, opn1, opn2, result);
             break;
@@ -616,7 +616,7 @@ void semantic_analysis(ASTNode *T)
             break;
         case VAR_DEF:
             T->code = nullptr;
-            T->ptr[1]->type = T->ptr[0]->type_id == "int" ? INT : FLOAT;
+            T->ptr[1]->type = get<string>(T->ptr[0]->data) == "int" ? INT : FLOAT;
             T0 = T->ptr[1];
             num = 0;
             T0->offset = T->offset;
@@ -633,27 +633,27 @@ void semantic_analysis(ASTNode *T)
                     T0->ptr[1]->offset = T0->offset + width;
                 if (T0->ptr[0]->kind == ID)
                 {
-                    rtn = fill_symbol_table(T0->ptr[0]->type_id, new_alias(), LEV, T0->ptr[0]->type, 'V', T->offset + T->width); // todo: offset count
+                    rtn = fill_symbol_table(get<string>(T0->ptr[0]->data), new_alias(), LEV, T0->ptr[0]->type, 'V', T->offset + T->width); // todo: offset count
                     if (rtn == -1)
-                        semantic_error(T0->ptr[0]->pos, T0->ptr[0]->type_id, "Variable re-declared.");
+                        semantic_error(T0->ptr[0]->pos, get<string>(T0->ptr[0]->data), "Variable re-declared.");
                     else
                         T0->ptr[0]->place = rtn;
                     T->width += width;
                 }
                 else if (T0->ptr[0]->kind == ASSIGNOP)
                 {
-                    rtn = fill_symbol_table(T0->ptr[0]->ptr[0]->type_id, new_alias(), LEV, T0->ptr[0]->type, 'V', T->offset + T->width); // todo: offset count
+                    rtn = fill_symbol_table(get<string>(T0->ptr[0]->ptr[0]->data), new_alias(), LEV, T0->ptr[0]->type, 'V', T->offset + T->width); // todo: offset count
                     if (rtn == -1)
-                        semantic_error(T0->ptr[0]->ptr[0]->pos, T0->ptr[0]->ptr[0]->type_id, "Variable re-declared.");
+                        semantic_error(T0->ptr[0]->ptr[0]->pos, get<string>(T0->ptr[0]->ptr[0]->data), "Variable re-declared.");
                     else
                     {
                         T0->ptr[0]->place = rtn;
                         T0->ptr[0]->ptr[1]->offset = T->offset + T->width + width;
                         expression(T0->ptr[0]->ptr[1]);
                         opn1.kind = ID;
-                        opn1.id = symbol_table[T0->ptr[0]->ptr[1]->place].alias;
+                        opn1.data = symbol_table[T0->ptr[0]->ptr[1]->place].alias;
                         result.kind = ID;
-                        result.id = symbol_table[T0->ptr[0]->place].alias;
+                        result.data = symbol_table[T0->ptr[0]->place].alias;
                         T->code = merge_code_node({T->code, T0->ptr[0]->ptr[1]->code, generate_code_node(ASSIGNOP, opn1, opn2, result)});
                     }
                     T->width += width + T0->ptr[0]->ptr[1]->width;
@@ -747,7 +747,7 @@ void semantic_analysis(ASTNode *T)
 
                 T->width = T->ptr[0]->width;
                 result.kind = ID;
-                result.id = symbol_table[T->ptr[0]->place].alias;
+                result.data = symbol_table[T->ptr[0]->place].alias;
                 result.offset = symbol_table[T->ptr[0]->place].offset;
                 T->code = merge_code_node({T->ptr[0]->code, generate_code_node(RETURN, opn1, opn2, result)});
             }
@@ -785,18 +785,18 @@ void print_ir_old(CodeNode *head)
     do
     {
         if (h->opn1.kind == INT)
-            sprintf(opnstr1, "#%d", h->opn1.const_int);
+            sprintf(opnstr1, "#%d", get<int>(h->opn1.data));
         if (h->opn1.kind == FLOAT)
-            sprintf(opnstr1, "#%f", h->opn1.const_float);
+            sprintf(opnstr1, "#%f", get<float>(h->opn1.data));
         if (h->opn1.kind == ID)
-            sprintf(opnstr1, "%s", h->opn1.id.c_str());
+            sprintf(opnstr1, "%s", get<string>(h->opn1.data).c_str());
         if (h->opn2.kind == INT)
-            sprintf(opnstr2, "#%d", h->opn2.const_int);
+            sprintf(opnstr2, "#%d", get<int>(h->opn2.data));
         if (h->opn2.kind == FLOAT)
-            sprintf(opnstr2, "#%f", h->opn2.const_float);
+            sprintf(opnstr2, "#%f", get<float>(h->opn2.data));
         if (h->opn2.kind == ID)
-            sprintf(opnstr2, "%s", h->opn2.id.c_str());
-        sprintf(resultstr, "%s", h->result.id.c_str());
+            sprintf(opnstr2, "%s", get<string>(h->opn2.data).c_str());
+        sprintf(resultstr, "%s", get<string>(h->result.data).c_str());
         switch (h->op)
         {
         case ASSIGNOP:
@@ -810,16 +810,16 @@ void print_ir_old(CodeNode *head)
                    h->op == PLUS ? '+' : h->op == MINUS ? '-' : h->op == STAR ? '*' : '\\', opnstr2);
             break;
         case FUNCTION:
-            printf("\nFUNCTION %s :\n", h->result.id.c_str());
+            printf("\nFUNCTION %s :\n", get<string>(h->result.data).c_str());
             break;
         case PARAM:
-            printf("  PARAM %s\n", h->result.id.c_str());
+            printf("  PARAM %s\n", get<string>(h->result.data).c_str());
             break;
         case LABEL:
-            printf("LABEL %s :\n", h->result.id.c_str());
+            printf("LABEL %s :\n", get<string>(h->result.data).c_str());
             break;
         case GOTO:
-            printf("  GOTO %s\n", h->result.id.c_str());
+            printf("  GOTO %s\n", get<string>(h->result.data).c_str());
             break;
         case JLE:
             printf("  IF %s <= %s GOTO %s\n", opnstr1, opnstr2, resultstr);
@@ -840,7 +840,7 @@ void print_ir_old(CodeNode *head)
             printf("  IF %s != %s GOTO %s\n", opnstr1, opnstr2, resultstr);
             break;
         case ARG:
-            printf("  ARG %s\n", h->result.id.c_str());
+            printf("  ARG %s\n", get<string>(h->result.data).c_str());
             break;
         case CALL:
             if (opnstr1 == "write")

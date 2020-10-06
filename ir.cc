@@ -25,16 +25,16 @@ Value *prepare_opn(LLVMContext &TheContext, unordered_map<string, Value *> &val_
 {
     if (op.kind == INT)
     {
-        return ConstantInt::get(Type::getInt32Ty(TheContext), op.const_int);
+        return ConstantInt::get(Type::getInt32Ty(TheContext), get<int>(op.data));
     }
     else if (op.kind == FLOAT)
     {
-        return ConstantInt::get(Type::getInt32Ty(TheContext), op.const_float);
+        return ConstantInt::get(Type::getInt32Ty(TheContext), get<float>(op.data));
     }
     else if (op.kind == ID)
     {
-        if (val_table.count(op.id))
-            return val_table[op.id];
+        if (val_table.count(get<string>(op.data)))
+            return val_table[get<string>(op.data)];
     }
 
     return nullptr;
@@ -66,7 +66,7 @@ void print_lr(CodeNode *head)
         {
         case ASSIGNOP:
         {
-            string var_name(h->result.id);
+            string var_name(get<string>(h->result.data));
 
             auto *alloc = builder_stack.back().CreateAlloca(Type::getInt32Ty(TheContext), nullptr, var_name);
             auto *store = builder_stack.back().CreateStore(l, alloc);
@@ -77,36 +77,36 @@ void print_lr(CodeNode *head)
 
         case PLUS:
         {
-            auto *res = builder_stack.back().CreateAdd(l, r, h->result.id);
-            val_table[h->result.id] = res;
+            auto *res = builder_stack.back().CreateAdd(l, r, get<string>(h->result.data));
+            val_table[get<string>(h->result.data)] = res;
             break;
         }
 
         case MINUS:
         {
-            auto *res = builder_stack.back().CreateSub(l, r, h->result.id);
-            val_table[h->result.id] = res;
+            auto *res = builder_stack.back().CreateSub(l, r, get<string>(h->result.data));
+            val_table[get<string>(h->result.data)] = res;
             break;
         }
 
         case STAR:
         {
-            auto *res = builder_stack.back().CreateMul(l, r, h->result.id);
-            val_table[h->result.id] = res;
+            auto *res = builder_stack.back().CreateMul(l, r, get<string>(h->result.data));
+            val_table[get<string>(h->result.data)] = res;
             break;
         }
 
         case DIV:
         {
-            auto *res = builder_stack.back().CreateSDiv(l, r, h->result.id);
-            val_table[h->result.id] = res;
+            auto *res = builder_stack.back().CreateSDiv(l, r, get<string>(h->result.data));
+            val_table[get<string>(h->result.data)] = res;
             break;
         }
 
         case MOD:
         {
-            auto *res = builder_stack.back().CreateSRem(l, r, h->result.id);
-            val_table[h->result.id] = res;
+            auto *res = builder_stack.back().CreateSRem(l, r, get<string>(h->result.data));
+            val_table[get<string>(h->result.data)] = res;
             break;
         }
 
@@ -114,7 +114,7 @@ void print_lr(CodeNode *head)
         {
             if (h->result.kind)
             {
-                builder_stack.back().CreateRet(val_table[h->result.id]);
+                builder_stack.back().CreateRet(val_table[get<string>(h->result.data)]);
             }
             else
             {
@@ -125,7 +125,7 @@ void print_lr(CodeNode *head)
         }
         case FUNCTION:
         {
-            const string &function_name = h->result.id;
+            const string &function_name = get<string>(h->result.data);
             const int idx = search_symbol_table_with_flag(function_name, 'F');
 
             vector<Type *> parameters;
@@ -161,20 +161,20 @@ void print_lr(CodeNode *head)
         }
         case CALL:
         {
-            auto [fn, fn_type] = function_table[h->opn1.id];
+            auto [fn, fn_type] = function_table[get<string>(h->opn1.data)];
             vector<Value *> parameters;
             for (auto arg : h->data)
             {
-                parameters.push_back(val_table[arg->result.id]);
+                parameters.push_back(val_table[get<string>(arg->result.data)]);
             }
 
-            val_table[h->result.id] = builder_stack.back().CreateCall(fn_type, fn, parameters, h->result.id);
+            val_table[get<string>(h->result.data)] = builder_stack.back().CreateCall(fn_type, fn, parameters, get<string>(h->result.data));
             break;
         }
 
         case LABEL:
         {
-            const string &label = h->result.id;
+            const string &label = get<string>(h->result.data);
             BasicBlock *next_block = BasicBlock::Create(TheContext, label, function_stack.back());
             label_table[label] = next_block;
 
@@ -216,7 +216,7 @@ void print_lr(CodeNode *head)
 
         case GOTO:
         {
-            const string &label = h->result.id;
+            const string &label = get<string>(h->result.data);
             if (label_table.count(label))
             {
                 builder_stack.back().CreateBr(label_table[label]);
@@ -251,7 +251,7 @@ void print_lr(CodeNode *head)
             else if (h->op == JLE) val = builder_stack.back().CreateICmpSLE(l, r, "cmpres");
             else if (h->op == JLT) val = builder_stack.back().CreateICmpSLT(l, r, "cmpres");
 
-            const string &true_label = h->result.id, &false_label = h->data[0]->result.id;
+            const string &true_label = get<string>(h->result.data), &false_label = get<string>(h->data[0]->result.data);
             if (label_table.count(true_label) && label_table.count(false_label))
             {
                 builder_stack.back().CreateCondBr(val, label_table[true_label], label_table[false_label]);

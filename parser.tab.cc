@@ -1798,7 +1798,7 @@ yyreduce:
 
   case 8:
 #line 58 "./parser.y"
-                    {(yyval.ptr)=make_node(TYPE,yylineno);(yyval.ptr)->type_id = (yyvsp[0].type_id);(yyval.ptr)->type=((yyvsp[0].type_id) == "float")?FLOAT:INT;}
+                    {(yyval.ptr)=make_node(TYPE,yylineno);(yyval.ptr)->data = (yyvsp[0].type_id);(yyval.ptr)->type=((yyvsp[0].type_id) == "float")?FLOAT:INT;}
 #line 1803 "parser.tab.c"
     break;
 
@@ -1816,19 +1816,19 @@ yyreduce:
 
   case 11:
 #line 63 "./parser.y"
-                     {(yyval.ptr)=make_node(ID,yylineno);(yyval.ptr)->type_id = (yyvsp[0].type_id);}
+                     {(yyval.ptr)=make_node(ID,yylineno);(yyval.ptr)->data = (yyvsp[0].type_id);}
 #line 1821 "parser.tab.c"
     break;
 
   case 12:
 #line 65 "./parser.y"
-                            {(yyval.ptr)=make_node(FUNC_DEC,yylineno,{(yyvsp[-1].ptr)});(yyval.ptr)->type_id = (yyvsp[-3].type_id);}
+                            {(yyval.ptr)=make_node(FUNC_DEC,yylineno,{(yyvsp[-1].ptr)});(yyval.ptr)->data = (yyvsp[-3].type_id);}
 #line 1827 "parser.tab.c"
     break;
 
   case 13:
 #line 66 "./parser.y"
-                             {(yyval.ptr)=make_node(FUNC_DEC,yylineno);(yyval.ptr)->type_id = (yyvsp[-2].type_id);(yyval.ptr)->ptr[0]=NULL;}
+                             {(yyval.ptr)=make_node(FUNC_DEC,yylineno);(yyval.ptr)->data = (yyvsp[-2].type_id);(yyval.ptr)->ptr[0]=NULL;}
 #line 1833 "parser.tab.c"
     break;
 
@@ -1948,61 +1948,61 @@ yyreduce:
 
   case 33:
 #line 98 "./parser.y"
-                              {(yyval.ptr)=make_node(ASSIGNOP,yylineno,{(yyvsp[-2].ptr),(yyvsp[0].ptr)});(yyval.ptr)->type_id = "ASSIGNOP";}
+                              {(yyval.ptr)=make_node(ASSIGNOP,yylineno,{(yyvsp[-2].ptr),(yyvsp[0].ptr)});(yyval.ptr)->data = "ASSIGNOP";}
 #line 1953 "parser.tab.c"
     break;
 
   case 34:
 #line 100 "./parser.y"
-                         {(yyval.ptr)=make_node(ASSIGNOP,yylineno,{(yyvsp[-2].ptr),(yyvsp[0].ptr)});(yyval.ptr)->type_id = "ASSIGNOP";}
+                         {(yyval.ptr)=make_node(ASSIGNOP,yylineno,{(yyvsp[-2].ptr),(yyvsp[0].ptr)});(yyval.ptr)->data = "ASSIGNOP";}
 #line 1959 "parser.tab.c"
     break;
 
   case 35:
 #line 101 "./parser.y"
-                      {(yyval.ptr)=make_node(AND,yylineno,{(yyvsp[-2].ptr),(yyvsp[0].ptr)});(yyval.ptr)->type_id = "AND";}
+                      {(yyval.ptr)=make_node(AND,yylineno,{(yyvsp[-2].ptr),(yyvsp[0].ptr)});(yyval.ptr)->data = "AND";}
 #line 1965 "parser.tab.c"
     break;
 
   case 36:
 #line 102 "./parser.y"
-                      {(yyval.ptr)=make_node(OR,yylineno,{(yyvsp[-2].ptr),(yyvsp[0].ptr)});(yyval.ptr)->type_id = "OR";}
+                      {(yyval.ptr)=make_node(OR,yylineno,{(yyvsp[-2].ptr),(yyvsp[0].ptr)});(yyval.ptr)->data = "OR";}
 #line 1971 "parser.tab.c"
     break;
 
   case 37:
 #line 103 "./parser.y"
-                      {(yyval.ptr)=make_node(RELOP,yylineno,{(yyvsp[-2].ptr),(yyvsp[0].ptr)});(yyval.ptr)->type_id = (yyvsp[-1].type_id);}
+                      {(yyval.ptr)=make_node(RELOP,yylineno,{(yyvsp[-2].ptr),(yyvsp[0].ptr)});(yyval.ptr)->data = (yyvsp[-1].type_id);}
 #line 1977 "parser.tab.c"
     break;
 
   case 38:
 #line 104 "./parser.y"
-                      {(yyval.ptr)=make_node(PLUS,yylineno,{(yyvsp[-2].ptr),(yyvsp[0].ptr)});(yyval.ptr)->type_id = "PLUS";}
+                      {(yyval.ptr)=make_node(PLUS,yylineno,{(yyvsp[-2].ptr),(yyvsp[0].ptr)});(yyval.ptr)->data = "PLUS";}
 #line 1983 "parser.tab.c"
     break;
 
   case 39:
 #line 105 "./parser.y"
-                      {(yyval.ptr)=make_node(MINUS,yylineno,{(yyvsp[-2].ptr),(yyvsp[0].ptr)});(yyval.ptr)->type_id = "MINUS";}
+                      {(yyval.ptr)=make_node(MINUS,yylineno,{(yyvsp[-2].ptr),(yyvsp[0].ptr)});(yyval.ptr)->data = "MINUS";}
 #line 1989 "parser.tab.c"
     break;
 
   case 40:
 #line 106 "./parser.y"
-                      {(yyval.ptr)=make_node(STAR,yylineno,{(yyvsp[-2].ptr),(yyvsp[0].ptr)});(yyval.ptr)->type_id = "STAR";}
+                      {(yyval.ptr)=make_node(STAR,yylineno,{(yyvsp[-2].ptr),(yyvsp[0].ptr)});(yyval.ptr)->data = "STAR";}
 #line 1995 "parser.tab.c"
     break;
 
   case 41:
 #line 107 "./parser.y"
-                     {(yyval.ptr)=make_node(MOD,yylineno,{(yyvsp[-2].ptr),(yyvsp[0].ptr)});(yyval.ptr)->type_id = "MOD";}
+                     {(yyval.ptr)=make_node(MOD,yylineno,{(yyvsp[-2].ptr),(yyvsp[0].ptr)});(yyval.ptr)->data = "MOD";}
 #line 2001 "parser.tab.c"
     break;
 
   case 42:
 #line 108 "./parser.y"
-                      {(yyval.ptr)=make_node(DIV,yylineno,{(yyvsp[-2].ptr),(yyvsp[0].ptr)});(yyval.ptr)->type_id = "DIV";}
+                      {(yyval.ptr)=make_node(DIV,yylineno,{(yyvsp[-2].ptr),(yyvsp[0].ptr)});(yyval.ptr)->data = "DIV";}
 #line 2007 "parser.tab.c"
     break;
 
@@ -2014,55 +2014,55 @@ yyreduce:
 
   case 44:
 #line 110 "./parser.y"
-                                 {(yyval.ptr)=make_node(UMINUS,yylineno,{(yyvsp[0].ptr)});(yyval.ptr)->type_id = "UMINUS";}
+                                 {(yyval.ptr)=make_node(UMINUS,yylineno,{(yyvsp[0].ptr)});(yyval.ptr)->data = "UMINUS";}
 #line 2019 "parser.tab.c"
     break;
 
   case 45:
 #line 111 "./parser.y"
-                      {(yyval.ptr)=make_node(NOT,yylineno,{(yyvsp[0].ptr)});(yyval.ptr)->type_id = "NOT";}
+                      {(yyval.ptr)=make_node(NOT,yylineno,{(yyvsp[0].ptr)});(yyval.ptr)->data = "NOT";}
 #line 2025 "parser.tab.c"
     break;
 
   case 46:
 #line 112 "./parser.y"
-                        {(yyval.ptr)=make_node(DPLUS,yylineno,{(yyvsp[0].ptr)});(yyval.ptr)->type_id = "DPLUS";}
+                        {(yyval.ptr)=make_node(DPLUS,yylineno,{(yyvsp[0].ptr)});(yyval.ptr)->data = "DPLUS";}
 #line 2031 "parser.tab.c"
     break;
 
   case 47:
 #line 113 "./parser.y"
-                         {(yyval.ptr)=make_node(DPLUS,yylineno,{(yyvsp[-1].ptr)});(yyval.ptr)->type_id = "DPLUS";}
+                         {(yyval.ptr)=make_node(DPLUS,yylineno,{(yyvsp[-1].ptr)});(yyval.ptr)->data = "DPLUS";}
 #line 2037 "parser.tab.c"
     break;
 
   case 48:
 #line 114 "./parser.y"
-                      {(yyval.ptr)=make_node(FUNC_CALL,yylineno,{(yyvsp[-1].ptr)});(yyval.ptr)->type_id = (yyvsp[-3].type_id);}
+                      {(yyval.ptr)=make_node(FUNC_CALL,yylineno,{(yyvsp[-1].ptr)});(yyval.ptr)->data = (yyvsp[-3].type_id);}
 #line 2043 "parser.tab.c"
     break;
 
   case 49:
 #line 115 "./parser.y"
-                      {(yyval.ptr)=make_node(FUNC_CALL,yylineno);(yyval.ptr)->type_id = (yyvsp[-2].type_id);}
+                      {(yyval.ptr)=make_node(FUNC_CALL,yylineno);(yyval.ptr)->data = (yyvsp[-2].type_id);}
 #line 2049 "parser.tab.c"
     break;
 
   case 50:
 #line 116 "./parser.y"
-                      {(yyval.ptr)=make_node(ID,yylineno);(yyval.ptr)->type_id = (yyvsp[0].type_id);}
+                      {(yyval.ptr)=make_node(ID,yylineno);(yyval.ptr)->data = (yyvsp[0].type_id);}
 #line 2055 "parser.tab.c"
     break;
 
   case 51:
 #line 117 "./parser.y"
-                      {(yyval.ptr)=make_node(INT,yylineno);(yyval.ptr)->type_int=(yyvsp[0].type_int);(yyval.ptr)->type=INT;}
+                      {(yyval.ptr)=make_node(INT,yylineno);(yyval.ptr)->data=(yyvsp[0].type_int);(yyval.ptr)->type=INT;}
 #line 2061 "parser.tab.c"
     break;
 
   case 52:
 #line 118 "./parser.y"
-                      {(yyval.ptr)=make_node(FLOAT,yylineno);(yyval.ptr)->type_float=(yyvsp[0].type_float);(yyval.ptr)->type=FLOAT;}
+                      {(yyval.ptr)=make_node(FLOAT,yylineno);(yyval.ptr)->data=(yyvsp[0].type_float);(yyval.ptr)->type=FLOAT;}
 #line 2067 "parser.tab.c"
     break;
 
