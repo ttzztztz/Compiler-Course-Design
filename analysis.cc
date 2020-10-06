@@ -449,8 +449,11 @@ void expression(ASTNode *T)
             result.kind = ID;
             result.id = symbol_table[T->place].alias;
             result.offset = symbol_table[T->place].offset;
-            T->code = merge_code_node(2, T->code, generate_code_node(CALL, opn1, opn2, result));
-            T->code->data = std::move(call_args);
+
+            auto* call_code_node = generate_code_node(CALL, opn1, opn2, result);
+            call_code_node->data = call_args;
+
+            T->code = merge_code_node(2, T->code, call_code_node);
             break;
         }
         case ARGS:
@@ -726,7 +729,7 @@ void semantic_analysis(ASTNode *T)
             semantic_analysis(T->ptr[1]);
             if (T->width < T->ptr[1]->width)
                 T->width = T->ptr[1]->width;
-            T->code = merge_code_node(5, generate_label(T->ptr[1]->Snext), T->ptr[0]->code,
+            T->code = merge_code_node(6, generate_goto(T->ptr[1]->Snext), generate_label(T->ptr[1]->Snext), T->ptr[0]->code,
                                       generate_label(T->ptr[0]->Etrue), T->ptr[1]->code, generate_goto(T->ptr[1]->Snext));
             break;
         case EXP_STMT:
