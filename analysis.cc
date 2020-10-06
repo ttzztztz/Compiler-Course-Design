@@ -778,88 +778,9 @@ void semantic_analysis(ASTNode *T)
     }
 }
 
-void print_ir_old(CodeNode *head)
-{
-    char opnstr1[32], opnstr2[32], resultstr[32];
-    CodeNode *h = head;
-    do
-    {
-        if (h->opn1.kind == INT)
-            sprintf(opnstr1, "#%d", get<int>(h->opn1.data));
-        if (h->opn1.kind == FLOAT)
-            sprintf(opnstr1, "#%f", get<float>(h->opn1.data));
-        if (h->opn1.kind == ID)
-            sprintf(opnstr1, "%s", get<string>(h->opn1.data).c_str());
-        if (h->opn2.kind == INT)
-            sprintf(opnstr2, "#%d", get<int>(h->opn2.data));
-        if (h->opn2.kind == FLOAT)
-            sprintf(opnstr2, "#%f", get<float>(h->opn2.data));
-        if (h->opn2.kind == ID)
-            sprintf(opnstr2, "%s", get<string>(h->opn2.data).c_str());
-        sprintf(resultstr, "%s", get<string>(h->result.data).c_str());
-        switch (h->op)
-        {
-        case ASSIGNOP:
-            printf("  %s := %s\n", resultstr, opnstr1);
-            break;
-        case PLUS:
-        case MINUS:
-        case STAR:
-        case DIV:
-            printf("  %s := %s %c %s\n", resultstr, opnstr1,
-                   h->op == PLUS ? '+' : h->op == MINUS ? '-' : h->op == STAR ? '*' : '\\', opnstr2);
-            break;
-        case FUNCTION:
-            printf("\nFUNCTION %s :\n", get<string>(h->result.data).c_str());
-            break;
-        case PARAM:
-            printf("  PARAM %s\n", get<string>(h->result.data).c_str());
-            break;
-        case LABEL:
-            printf("LABEL %s :\n", get<string>(h->result.data).c_str());
-            break;
-        case GOTO:
-            printf("  GOTO %s\n", get<string>(h->result.data).c_str());
-            break;
-        case JLE:
-            printf("  IF %s <= %s GOTO %s\n", opnstr1, opnstr2, resultstr);
-            break;
-        case JLT:
-            printf("  IF %s < %s GOTO %s\n", opnstr1, opnstr2, resultstr);
-            break;
-        case JGE:
-            printf("  IF %s >= %s GOTO %s\n", opnstr1, opnstr2, resultstr);
-            break;
-        case JGT:
-            printf("  IF %s > %s GOTO %s\n", opnstr1, opnstr2, resultstr);
-            break;
-        case EQ:
-            printf("  IF %s == %s GOTO %s\n", opnstr1, opnstr2, resultstr);
-            break;
-        case NEQ:
-            printf("  IF %s != %s GOTO %s\n", opnstr1, opnstr2, resultstr);
-            break;
-        case ARG:
-            printf("  ARG %s\n", get<string>(h->result.data).c_str());
-            break;
-        case CALL:
-            printf("  %s := CALL %s\n", resultstr, opnstr1);
-            break;
-        case RETURN:
-            if (h->result.kind)
-                printf("  RETURN %s\n", resultstr);
-            else
-                printf("  RETURN\n");
-            break;
-        }
-        h = h->next;
-    } while (h != head);
-}
-
 void entrypoint(ASTNode *T)
 {
     T->offset = 0;
     semantic_analysis(T);
     print_lr(T->code);
-    // print_ir_old(T->code);
 }
