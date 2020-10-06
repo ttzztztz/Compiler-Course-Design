@@ -24,6 +24,8 @@ public:
     variant<int, float, string> data;
     int level;
     int offset;
+
+    Operation();
 };
 
 class CodeNode
@@ -33,6 +35,8 @@ public:
     vector<CodeNode*> data;
     Operation opn1, opn2, result;
     CodeNode *next, *prior;
+
+    CodeNode();
 };
 
 class ASTNode
@@ -50,6 +54,8 @@ public:
     int offset;
     int width;
     int num;
+
+    ASTNode();
 };
 
 class Symbol
@@ -62,6 +68,8 @@ public:
     string alias;
     char flag;
     char offset;
+
+    Symbol();
 };
 
 ASTNode *make_node(int kind, int pos, vector<ASTNode*> nodes = vector<ASTNode*>{});
