@@ -120,7 +120,7 @@ void print_lr(CodeNode *head)
         case FUNCTION:
         {
             const string &function_name = h->result.id;
-            const int idx = searchSymbolTableWithFlag(function_name, 'F');
+            const int idx = search_symbol_table_with_flag(function_name, 'F');
 
             vector<Type *> parameters;
             for (int i = 0; i < symbol_table[idx].paramnum; i++)

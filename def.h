@@ -11,6 +11,9 @@
 
 using std::string, std::unordered_map, std::vector;
 
+#define PRINT_AST 0
+#define PRINT_SYMBOL_TABLE 0
+
 #define DX 3 * sizeof(int)
 
 class Operation
@@ -66,10 +69,10 @@ public:
     char offset;
 };
 
-ASTNode *mknode(int num, int kind, int pos, ...);
+ASTNode *make_node(int num, int kind, int pos, ...);
 void entrypoint(ASTNode *T);
-void boolExp(ASTNode *T);
-void Exp(ASTNode *T);
+void bool_expression(ASTNode *T);
+void expression(ASTNode *T);
 void objectCode(CodeNode *head);
 void print_lr(CodeNode *head);
-int searchSymbolTableWithFlag(const string& name, char flag);
+int search_symbol_table_with_flag(const string& name, char flag);
