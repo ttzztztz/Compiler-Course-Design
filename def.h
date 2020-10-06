@@ -8,9 +8,9 @@
 #include "string"
 #include "unordered_map"
 #include "vector"
+#include "variant"
 
-using std::string, std::unordered_map, std::vector;
-
+using std::string, std::unordered_map, std::vector, std::variant, std::get;
 #define PRINT_AST 0
 #define PRINT_SYMBOL_TABLE 0
 
@@ -21,10 +21,7 @@ class Operation
 public:
     int kind;
     int type;
-    int const_int;
-    float const_float;
-    char const_char;
-    string id;
+    variant<int, float, string> data;
     int level;
     int offset;
 };
@@ -42,9 +39,7 @@ class ASTNode
 {
 public:
     int kind;
-    string type_id;
-    int type_int; 
-    float type_float; 
+    variant<int, float, string> data;
     ASTNode *ptr[4];
     int place;
     string Etrue, Efalse;
