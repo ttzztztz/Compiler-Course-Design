@@ -1,5 +1,5 @@
 
-#line 2 "lex.yy.c"
+#line 3 "lex.yy.c"
 
 #define  YY_INT_ALIGNED short int
 
@@ -400,7 +400,7 @@ static const YY_CHAR yy_ec[256] =
        20,   21,    1,    1,   22,   22,   22,   22,   22,   22,
        22,   22,   22,   22,   22,   22,   22,   22,   22,   22,
        22,   22,   22,   22,   22,   22,   22,   22,   22,   22,
-        1,    1,    1,    1,    1,    1,   23,   22,   22,   22,
+        1,    1,    1,    1,   22,    1,   23,   22,   22,   22,
 
        24,   25,   22,   26,   27,   22,   22,   28,   22,   29,
        30,   22,   22,   31,   32,   33,   34,   22,   35,   22,
@@ -522,8 +522,8 @@ typedef union {
 	struct node *ptr;
 } YYLVAL;
 #define YYSTYPE YYLVAL
-#line 525 "lex.yy.c"
 #line 526 "lex.yy.c"
+#line 527 "lex.yy.c"
 
 #define INITIAL 0
 
@@ -742,7 +742,7 @@ YY_DECL
 	{
 #line 22 "./lex.l"
 
-#line 745 "lex.yy.c"
+#line 746 "lex.yy.c"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -960,7 +960,7 @@ YY_RULE_SETUP
 #line 54 "./lex.l"
 ECHO;
 	YY_BREAK
-#line 963 "lex.yy.c"
+#line 964 "lex.yy.c"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 

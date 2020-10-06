@@ -1,5 +1,21 @@
 #define register 
 
+#include "llvm/ADT/APFloat.h"
+#include "llvm/ADT/STLExtras.h"
+#include "llvm/IR/BasicBlock.h"
+#include "llvm/IR/Constants.h"
+#include "llvm/IR/DerivedTypes.h"
+#include "llvm/IR/Function.h"
+#include "llvm/IR/IRBuilder.h"
+#include "llvm/IR/LLVMContext.h"
+#include "llvm/IR/Module.h"
+#include "llvm/IR/Verifier.h"
+#include "llvm/IR/Type.h"
+#include "llvm/IR/Instruction.h"
+#include "llvm/Transforms/Utils/BasicBlockUtils.h"
+#include "llvm/ExecutionEngine/GenericValue.h"
+#include "llvm/ExecutionEngine/Interpreter.h"
+
 #include "stdio.h"
 #include "stdlib.h"
 #include "stdarg.h"
@@ -9,8 +25,11 @@
 #include "unordered_map"
 #include "vector"
 #include "variant"
+#include "tuple"
 
-using std::string, std::unordered_map, std::vector, std::variant, std::get;
+using namespace llvm;
+using std::string, std::unordered_map, std::vector, std::variant, std::get, std::tuple;
+
 #define PRINT_AST 0
 #define PRINT_SYMBOL_TABLE 0
 
@@ -79,3 +98,4 @@ void expression(ASTNode *T);
 void objectCode(CodeNode *head);
 void print_lr(CodeNode *head);
 int search_symbol_table_with_flag(const string& name, char flag);
+tuple<Function*, FunctionType*, Function*, FunctionType*> inject_print_function(LLVMContext &ctx, IRBuilder<> &builder, Module &module);
