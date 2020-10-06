@@ -55,7 +55,7 @@ ExtDef:   Specifier ExtDecList SEMI   {$$=make_node(EXT_VAR_DEF,yylineno,{$1,$2}
          |Specifier FuncDec CompSt    {$$=make_node(FUNC_DEF,yylineno,{$1,$2,$3});}
          | error SEMI   {$$=NULL;}
          ;
-Specifier:  TYPE    {$$=make_node(TYPE,yylineno);$$->data = $1;$$->type=($1 == "float")?FLOAT:INT;}   
+Specifier:  TYPE    {$$=make_node(TYPE,yylineno);$$->data = string($1);$$->type=(string($1) == "float")?FLOAT:INT;}   
            ;
 ExtDecList:  VarDec      {$$=$1;}
            | VarDec COMMA ExtDecList {$$=make_node(EXT_DEC_LIST,yylineno,{$1,$3});}
