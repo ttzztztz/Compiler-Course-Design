@@ -55,15 +55,15 @@ CodeNode *generate_goto(const string &label)
     return h;
 }
 
-CodeNode *merge_code_node(int num, ...)
+CodeNode *merge_code_node(const vector<CodeNode *> &list)
 {
     CodeNode *h1, *h2, *p, *t1, *t2;
     va_list ap;
-    va_start(ap, num);
-    h1 = va_arg(ap, CodeNode *);
-    while (--num > 0)
+    h1 = list[0];
+
+    for (int ptr = 1; ptr < list.size(); ptr++)
     {
-        h2 = va_arg(ap, CodeNode *);
+        h2 = list[ptr];
         if (h1 == nullptr)
             h1 = h2;
         else if (h2)
@@ -76,7 +76,6 @@ CodeNode *merge_code_node(int num, ...)
             h2->prior = t1;
         }
     }
-    va_end(ap);
     return h1;
 }
 
@@ -258,7 +257,7 @@ void bool_expression(ASTNode *T)
                 op = NEQ;
             T->code = generate_code_node(op, opn1, opn2, result);
             T->code->data.push_back(generate_goto(T->Efalse));
-            T->code = merge_code_node(3, T->ptr[0]->code, T->ptr[1]->code, T->code);
+            T->code = merge_code_node({T->ptr[0]->code, T->ptr[1]->code, T->code});
             break;
         case AND:
         case OR:
@@ -281,9 +280,9 @@ void bool_expression(ASTNode *T)
             if (T->width < T->ptr[1]->width)
                 T->width = T->ptr[1]->width;
             if (T->kind == AND)
-                T->code = merge_code_node(3, T->ptr[0]->code, generate_label(T->ptr[0]->Etrue), T->ptr[1]->code);
+                T->code = merge_code_node({T->ptr[0]->code, generate_label(T->ptr[0]->Etrue), T->ptr[1]->code});
             else
-                T->code = merge_code_node(3, T->ptr[0]->code, generate_label(T->ptr[0]->Efalse), T->ptr[1]->code);
+                T->code = merge_code_node({T->ptr[0]->code, generate_label(T->ptr[0]->Efalse), T->ptr[1]->code});
             break;
         case NOT:
             T->ptr[0]->Etrue = T->Efalse;
@@ -353,14 +352,14 @@ void expression(ASTNode *T)
                 expression(T->ptr[1]);
                 T->type = T->ptr[0]->type;
                 T->width = T->ptr[1]->width;
-                T->code = merge_code_node(2, T->ptr[0]->code, T->ptr[1]->code);
+                T->code = merge_code_node({T->ptr[0]->code, T->ptr[1]->code});
                 opn1.kind = ID;
                 opn1.id = symbol_table[T->ptr[1]->place].alias;
                 opn1.offset = symbol_table[T->ptr[1]->place].offset;
                 result.kind = ID;
                 result.id = symbol_table[T->ptr[0]->place].alias;
                 result.offset = symbol_table[T->ptr[0]->place].offset;
-                T->code = merge_code_node(2, T->code, generate_code_node(ASSIGNOP, opn1, opn2, result));
+                T->code = merge_code_node({T->code, generate_code_node(ASSIGNOP, opn1, opn2, result)});
             }
             break;
         case AND:   // todo
@@ -397,7 +396,7 @@ void expression(ASTNode *T)
             result.id = symbol_table[T->place].alias;
             result.type = T->type;
             result.offset = symbol_table[T->place].offset;
-            T->code = merge_code_node(3, T->ptr[0]->code, T->ptr[1]->code, generate_code_node(T->kind, opn1, opn2, result));
+            T->code = merge_code_node({T->ptr[0]->code, T->ptr[1]->code, generate_code_node(T->kind, opn1, opn2, result)});
             T->width = T->ptr[0]->width + T->ptr[1]->width + (T->type == INT ? 4 : 8);
             break;
         case NOT: // todo
@@ -450,10 +449,10 @@ void expression(ASTNode *T)
             result.id = symbol_table[T->place].alias;
             result.offset = symbol_table[T->place].offset;
 
-            auto* call_code_node = generate_code_node(CALL, opn1, opn2, result);
+            auto *call_code_node = generate_code_node(CALL, opn1, opn2, result);
             call_code_node->data = call_args;
 
-            T->code = merge_code_node(2, T->code, call_code_node);
+            T->code = merge_code_node({T->code, call_code_node});
             break;
         }
         case ARGS:
@@ -466,7 +465,7 @@ void expression(ASTNode *T)
                 T->ptr[1]->offset = T->offset + T->ptr[0]->width;
                 expression(T->ptr[1]);
                 T->width += T->ptr[1]->width;
-                T->code = merge_code_node(2, T->code, T->ptr[1]->code);
+                T->code = merge_code_node({T->code, T->ptr[1]->code});
             }
             break;
         }
@@ -492,7 +491,7 @@ void semantic_analysis(ASTNode *T)
             {
                 T->ptr[1]->offset = T->ptr[0]->offset + T->ptr[0]->width;
                 semantic_analysis(T->ptr[1]);
-                T->code = merge_code_node(2, T->code, T->ptr[1]->code);
+                T->code = merge_code_node({T->code, T->ptr[1]->code});
             }
             break;
         case EXT_VAR_DEF:
@@ -513,7 +512,7 @@ void semantic_analysis(ASTNode *T)
             T->ptr[2]->Snext = new_label();
             semantic_analysis(T->ptr[2]);
             symbol_table[T->ptr[1]->place].offset = T->offset + T->ptr[2]->width;
-            T->code = merge_code_node(3, T->ptr[1]->code, T->ptr[2]->code, generate_label(T->ptr[2]->Snext));
+            T->code = merge_code_node({T->ptr[1]->code, T->ptr[2]->code, generate_label(T->ptr[2]->Snext)});
             break;
         case FUNC_DEC:
             rtn = fill_symbol_table(T->type_id, new_alias(), LEV, T->type, 'F', 0);
@@ -535,7 +534,7 @@ void semantic_analysis(ASTNode *T)
                 semantic_analysis(T->ptr[0]);
                 T->width = T->ptr[0]->width;
                 symbol_table[rtn].paramnum = T->ptr[0]->num;
-                T->code = merge_code_node(2, T->code, T->ptr[0]->code);
+                T->code = merge_code_node({T->code, T->ptr[0]->code});
             }
             else
             {
@@ -551,7 +550,7 @@ void semantic_analysis(ASTNode *T)
                 semantic_analysis(T->ptr[1]);
                 T->num = T->ptr[0]->num + T->ptr[1]->num;
                 T->width = T->ptr[0]->width + T->ptr[1]->width;
-                T->code = merge_code_node(2, T->ptr[0]->code, T->ptr[1]->code);
+                T->code = merge_code_node({T->ptr[0]->code, T->ptr[1]->code});
             }
             else
             {
@@ -591,7 +590,7 @@ void semantic_analysis(ASTNode *T)
                 T->ptr[1]->Snext = T->Snext;
                 semantic_analysis(T->ptr[1]);
                 T->width += T->ptr[1]->width;
-                T->code = merge_code_node(2, T->code, T->ptr[1]->code);
+                T->code = merge_code_node({T->code, T->ptr[1]->code});
             }
             print_symbol_table();
             LEV--;
@@ -611,7 +610,7 @@ void semantic_analysis(ASTNode *T)
             {
                 T->ptr[1]->offset = T->offset + T->ptr[0]->width;
                 semantic_analysis(T->ptr[1]);
-                T->code = merge_code_node(2, T->code, T->ptr[1]->code);
+                T->code = merge_code_node({T->code, T->ptr[1]->code});
                 T->width += T->ptr[1]->width;
             }
             break;
@@ -655,7 +654,7 @@ void semantic_analysis(ASTNode *T)
                         opn1.id = symbol_table[T0->ptr[0]->ptr[1]->place].alias;
                         result.kind = ID;
                         result.id = symbol_table[T0->ptr[0]->place].alias;
-                        T->code = merge_code_node(3, T->code, T0->ptr[0]->ptr[1]->code, generate_code_node(ASSIGNOP, opn1, opn2, result));
+                        T->code = merge_code_node({T->code, T0->ptr[0]->ptr[1]->code, generate_code_node(ASSIGNOP, opn1, opn2, result)});
                     }
                     T->width += width + T0->ptr[0]->ptr[1]->width;
                 }
@@ -683,9 +682,9 @@ void semantic_analysis(ASTNode *T)
                 T->ptr[1]->offset = T->offset;
                 semantic_analysis(T->ptr[1]);
                 if (T->ptr[0]->kind == RETURN || T->ptr[0]->kind == EXP_STMT || T->ptr[0]->kind == COMP_STM)
-                    T->code = merge_code_node(2, T->code, T->ptr[1]->code);
+                    T->code = merge_code_node({T->code, T->ptr[1]->code});
                 else
-                    T->code = merge_code_node(3, T->code, generate_label(T->ptr[0]->Snext), T->ptr[1]->code);
+                    T->code = merge_code_node({T->code, generate_label(T->ptr[0]->Snext), T->ptr[1]->code});
                 if (T->ptr[1]->width > T->width)
                     T->width = T->ptr[1]->width;
             }
@@ -700,7 +699,7 @@ void semantic_analysis(ASTNode *T)
             semantic_analysis(T->ptr[1]);
             if (T->width < T->ptr[1]->width)
                 T->width = T->ptr[1]->width;
-            T->code = merge_code_node(4, T->ptr[0]->code, generate_label(T->ptr[0]->Etrue), T->ptr[1]->code, generate_goto(T->ptr[1]->Snext));
+            T->code = merge_code_node({T->ptr[0]->code, generate_label(T->ptr[0]->Etrue), T->ptr[1]->code, generate_goto(T->ptr[1]->Snext)});
             break;
         case IF_THEN_ELSE:
             T->ptr[0]->Etrue = new_label();
@@ -716,8 +715,8 @@ void semantic_analysis(ASTNode *T)
             semantic_analysis(T->ptr[2]);
             if (T->width < T->ptr[2]->width)
                 T->width = T->ptr[2]->width;
-            T->code = merge_code_node(7, T->ptr[0]->code, generate_label(T->ptr[0]->Etrue), T->ptr[1]->code,
-                                      generate_goto(T->Snext), generate_label(T->ptr[0]->Efalse), T->ptr[2]->code, generate_goto(T->Snext));
+            T->code = merge_code_node({T->ptr[0]->code, generate_label(T->ptr[0]->Etrue), T->ptr[1]->code,
+                                       generate_goto(T->Snext), generate_label(T->ptr[0]->Efalse), T->ptr[2]->code, generate_goto(T->Snext)});
             break;
         case WHILE:
             T->ptr[0]->Etrue = new_label();
@@ -729,8 +728,8 @@ void semantic_analysis(ASTNode *T)
             semantic_analysis(T->ptr[1]);
             if (T->width < T->ptr[1]->width)
                 T->width = T->ptr[1]->width;
-            T->code = merge_code_node(6, generate_goto(T->ptr[1]->Snext), generate_label(T->ptr[1]->Snext), T->ptr[0]->code,
-                                      generate_label(T->ptr[0]->Etrue), T->ptr[1]->code, generate_goto(T->ptr[1]->Snext));
+            T->code = merge_code_node({generate_goto(T->ptr[1]->Snext), generate_label(T->ptr[1]->Snext), T->ptr[0]->code,
+                                       generate_label(T->ptr[0]->Etrue), T->ptr[1]->code, generate_goto(T->ptr[1]->Snext)});
             break;
         case EXP_STMT:
             T->ptr[0]->offset = T->offset;
@@ -750,7 +749,7 @@ void semantic_analysis(ASTNode *T)
                 result.kind = ID;
                 result.id = symbol_table[T->ptr[0]->place].alias;
                 result.offset = symbol_table[T->ptr[0]->place].offset;
-                T->code = merge_code_node(2, T->ptr[0]->code, generate_code_node(RETURN, opn1, opn2, result));
+                T->code = merge_code_node({T->ptr[0]->code, generate_code_node(RETURN, opn1, opn2, result)});
             }
             else
             {

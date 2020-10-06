@@ -239,8 +239,10 @@ void print_lr(CodeNode *head)
         {
             Value *val;
 
-            if (l->getType()->getTypeID() == llvm::Type::TypeID::PointerTyID) l = builder_stack.back().CreateLoad(l);
-            if (r->getType()->getTypeID() == llvm::Type::TypeID::PointerTyID) r = builder_stack.back().CreateLoad(r);
+
+            // type inconsistency
+            if (l->getType()->getTypeID() == llvm::Type::TypeID::PointerTyID && r->getType()->getTypeID() != llvm::Type::TypeID::PointerTyID) l = builder_stack.back().CreateLoad(l);
+            if (l->getType()->getTypeID() != llvm::Type::TypeID::PointerTyID && r->getType()->getTypeID() == llvm::Type::TypeID::PointerTyID) r = builder_stack.back().CreateLoad(r);
 
             if (h->op == EQ) val = builder_stack.back().CreateICmpEQ(l, r, "cmpres");
             else if (h->op == NEQ) val = builder_stack.back().CreateICmpNE(l, r, "cmpres");

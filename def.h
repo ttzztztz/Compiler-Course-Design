@@ -69,7 +69,7 @@ public:
     char offset;
 };
 
-ASTNode *make_node(int num, int kind, int pos, ...);
+ASTNode *make_node(int kind, int pos, vector<ASTNode*> nodes = vector<ASTNode*>{});
 void entrypoint(ASTNode *T);
 void bool_expression(ASTNode *T);
 void expression(ASTNode *T);
