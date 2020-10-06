@@ -15,7 +15,7 @@ typedef union {
 %}
 %option yylineno
 
-id     [A-Za-z][A-Za-z0-9]*  
+id     [A-Za-z_][A-Za-z0-9_]*  
 int    [0-9]+
 float  ([0-9]*\.[0-9]+)|([0-9]+\.)
 

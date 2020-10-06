@@ -508,10 +508,10 @@ void semantic_analysis(ASTNode *T)
             semantic_analysis(T->ptr[1]);
             T->offset += T->ptr[1]->width;
             T->ptr[2]->offset = T->offset;
-            T->ptr[2]->Snext = new_label();
+            // T->ptr[2]->Snext = new_label();
             semantic_analysis(T->ptr[2]);
             symbol_table[T->ptr[1]->place].offset = T->offset + T->ptr[2]->width;
-            T->code = merge_code_node({T->ptr[1]->code, T->ptr[2]->code, generate_label(T->ptr[2]->Snext)});
+            T->code = merge_code_node({T->ptr[1]->code, T->ptr[2]->code});
             break;
         case FUNC_DEC:
             rtn = fill_symbol_table(get<string>(T->data), new_alias(), level, T->type, 'F', 0);
@@ -779,6 +779,9 @@ void semantic_analysis(ASTNode *T)
 
 void entrypoint(ASTNode *T)
 {
+    fill_symbol_table("print_int", "", 0, INT, 'F', 0);
+    symbol_table[0].paramnum = 1;
+    fill_symbol_table("0", "", 1, INT, 'P', 0);
     T->offset = 0;
     semantic_analysis(T);
     print_lr(T->code);

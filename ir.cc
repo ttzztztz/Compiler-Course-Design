@@ -1,22 +1,9 @@
-#include "llvm/ADT/APFloat.h"
-#include "llvm/ADT/STLExtras.h"
-#include "llvm/IR/BasicBlock.h"
-#include "llvm/IR/Constants.h"
-#include "llvm/IR/DerivedTypes.h"
-#include "llvm/IR/Function.h"
-#include "llvm/IR/IRBuilder.h"
-#include "llvm/IR/LLVMContext.h"
-#include "llvm/IR/Module.h"
-#include "llvm/IR/Type.h"
-#include "llvm/IR/Instruction.h"
-#include "llvm/Transforms/Utils/BasicBlockUtils.h"
-
 #include "def.h"
 #include "iostream"
+#include "memory"
 #include "list"
 
-using namespace llvm;
-using std::pair, std::tuple, std::list;
+using std::pair, std::tuple, std::list, std::make_unique;
 
 extern vector<Symbol> symbol_table;
 
@@ -52,6 +39,11 @@ void print_lr(CodeNode *head)
     unordered_map<string, vector<pair<Instruction *, IRBuilderBase::InsertPoint>>> unfinished_goto_statement;
     list<tuple<Instruction *, IRBuilderBase::InsertPoint, Value *, string, string>> unfinished_br_statement;
 
+    builder_stack.emplace_back(IRBuilder<>(TheContext));
+    auto [printf_func, printf_func_type, print_int_func, print_int_func_type] = inject_print_function(TheContext, builder_stack.back(), TheModule);
+    function_table["printf"] = {printf_func, printf_func_type};
+    function_table["print_int"] = {print_int_func, print_int_func_type};
+
     CodeNode *h = head;
     do
     {
@@ -65,6 +57,10 @@ void print_lr(CodeNode *head)
             string var_name(get<string>(h->result.data));
 
             auto *alloc = builder_stack.back().CreateAlloca(Type::getInt32Ty(TheContext), nullptr, var_name);
+            if (l->getType()->isPointerTy())
+            {
+                l = builder_stack.back().CreateLoad(Type::getInt32Ty(TheContext), l, "");
+            }
             auto *store = builder_stack.back().CreateStore(l, alloc);
 
             val_table[var_name] = alloc;
@@ -72,36 +68,30 @@ void print_lr(CodeNode *head)
         }
 
         case PLUS:
-        {
-            auto *res = builder_stack.back().CreateAdd(l, r, get<string>(h->result.data));
-            val_table[get<string>(h->result.data)] = res;
-            break;
-        }
-
         case MINUS:
-        {
-            auto *res = builder_stack.back().CreateSub(l, r, get<string>(h->result.data));
-            val_table[get<string>(h->result.data)] = res;
-            break;
-        }
-
         case STAR:
-        {
-            auto *res = builder_stack.back().CreateMul(l, r, get<string>(h->result.data));
-            val_table[get<string>(h->result.data)] = res;
-            break;
-        }
-
         case DIV:
-        {
-            auto *res = builder_stack.back().CreateSDiv(l, r, get<string>(h->result.data));
-            val_table[get<string>(h->result.data)] = res;
-            break;
-        }
-
         case MOD:
         {
-            auto *res = builder_stack.back().CreateSRem(l, r, get<string>(h->result.data));
+            if (l->getType()->isPointerTy())
+            {
+                l = builder_stack.back().CreateLoad(Type::getInt32Ty(TheContext), l, "");
+            }
+            if (r->getType()->isPointerTy())
+            {
+                r = builder_stack.back().CreateLoad(Type::getInt32Ty(TheContext), r, "");
+            }
+            Value *res = nullptr;
+
+            if (h->op == PLUS)
+                res = builder_stack.back().CreateAdd(l, r, get<string>(h->result.data));
+            else if (h->op == MINUS)
+                res = builder_stack.back().CreateSub(l, r, get<string>(h->result.data));
+            else if (h->op == STAR)
+                res = builder_stack.back().CreateMul(l, r, get<string>(h->result.data));
+            else if (h->op == DIV) res = builder_stack.back().CreateSDiv(l, r, get<string>(h->result.data));
+            else if (h->op == MOD) res = builder_stack.back().CreateSRem(l, r, get<string>(h->result.data));
+
             val_table[get<string>(h->result.data)] = res;
             break;
         }
@@ -110,7 +100,8 @@ void print_lr(CodeNode *head)
         {
             if (h->result.kind)
             {
-                builder_stack.back().CreateRet(val_table[get<string>(h->result.data)]);
+                auto *load_val = builder_stack.back().CreateLoad(Type::getInt32Ty(TheContext), val_table[get<string>(h->result.data)], "");
+                builder_stack.back().CreateRet(load_val);
             }
             else
             {
@@ -161,7 +152,8 @@ void print_lr(CodeNode *head)
             vector<Value *> parameters;
             for (auto arg : h->data)
             {
-                parameters.push_back(val_table[get<string>(arg->result.data)]);
+                auto *load = builder_stack.back().CreateLoad(Type::getInt32Ty(TheContext), val_table[get<string>(arg->result.data)], "");
+                parameters.push_back(load);
             }
 
             val_table[get<string>(h->result.data)] = builder_stack.back().CreateCall(fn_type, fn, parameters, get<string>(h->result.data));
@@ -237,9 +229,9 @@ void print_lr(CodeNode *head)
 
             // type inconsistency
             if (l->getType()->getTypeID() == llvm::Type::TypeID::PointerTyID && r->getType()->getTypeID() != llvm::Type::TypeID::PointerTyID)
-                l = builder_stack.back().CreateLoad(l);
+                l = builder_stack.back().CreateLoad(Type::getInt32Ty(TheContext), l, "");
             if (l->getType()->getTypeID() != llvm::Type::TypeID::PointerTyID && r->getType()->getTypeID() == llvm::Type::TypeID::PointerTyID)
-                r = builder_stack.back().CreateLoad(r);
+                r = builder_stack.back().CreateLoad(Type::getInt32Ty(TheContext), r, "");
 
             if (h->op == EQ)
                 val = builder_stack.back().CreateICmpEQ(l, r, "cmpres");
@@ -272,4 +264,10 @@ void print_lr(CodeNode *head)
     } while (h != head);
 
     TheModule.print(errs(), nullptr);
+    verifyModule(TheModule, &(errs()));
+
+    std::unique_ptr<Module> ptr(&TheModule);
+    ExecutionEngine *engine = EngineBuilder(std::move(ptr)).create();
+    engine->finalizeObject();
+    engine->runFunction(function_table["main"].first, {});
 }

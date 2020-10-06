@@ -1,29 +1,9 @@
-int donothing() {
-    return 0;
-}
+int main() {
+    int a = 12;
 
-int add(int a, int b) {
     while (a > 0) {
-        donothing();
+        print_int(a);
         a = a - 1;
     }
-    return a + b;
-}
-
-int fn(int c, int c2, int c3, int c4, int c5) {
-    int tmp = 1 + c2;
-    int tmp2 = add(tmp, c4);
-
-    if (tmp2 == 1) {
-        if (tmp >= 5) {
-            add(3, 4);
-        } else {
-            add(9, 12);
-        }
-        add(6, 7);
-    } else {
-        add(10, 12);
-    }
-
-    return tmp2;
+    return 0;
 }
