@@ -1,7 +1,7 @@
 #include "def.h"
 #include "parser.tab.h"
 
-ASTNode *mknode(int num, int kind, int pos, ...)
+ASTNode *make_node(int num, int kind, int pos, ...)
 {
     ASTNode *T = new ASTNode();
     int i = 0;
@@ -19,7 +19,9 @@ ASTNode *mknode(int num, int kind, int pos, ...)
 
 void display(ASTNode *T, int indent)
 {
+    #if PRINT_AST == 0
     return;
+    #endif
 
     int i = 1;
     ASTNode *T0;
