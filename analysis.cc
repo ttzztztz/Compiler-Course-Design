@@ -153,8 +153,7 @@ int fill_temp_var(const string &name, int level, int type, char flag, int offset
     return symbol_table.size() - 1;
 }
 
-int LEV = 0;
-int func_size;
+int level = 0, func_size = 0;
 
 void ext_var_list(ASTNode *T)
 {
@@ -172,7 +171,7 @@ void ext_var_list(ASTNode *T)
         T->num = T->ptr[1]->num + 1;
         break;
     case ID:
-        rtn = fill_symbol_table(get<string>(T->data), new_alias(), LEV, T->type, 'V', T->offset);
+        rtn = fill_symbol_table(get<string>(T->data), new_alias(), level, T->type, 'V', T->offset);
         if (rtn == -1)
             semantic_error(T->pos, get<string>(T->data), "Redecl Variable");
         else
@@ -319,7 +318,7 @@ void expression(ASTNode *T)
             }
             break;
         case INT:
-            T->place = fill_temp_var(new_temp(), LEV, T->type, 'T', T->offset);
+            T->place = fill_temp_var(new_temp(), level, T->type, 'T', T->offset);
             T->type = INT;
             opn1.kind = INT;
             opn1.data = get<int>(T->data);
@@ -330,7 +329,7 @@ void expression(ASTNode *T)
             T->width = 4;
             break;
         case FLOAT:
-            T->place = fill_temp_var(new_temp(), LEV, T->type, 'T', T->offset);
+            T->place = fill_temp_var(new_temp(), level, T->type, 'T', T->offset);
             T->type = FLOAT;
             opn1.kind = FLOAT;
             opn1.data = get<float>(T->data);
@@ -383,7 +382,7 @@ void expression(ASTNode *T)
                 T->type = FLOAT, T->width = T->ptr[0]->width + T->ptr[1]->width + 4;
             else
                 T->type = INT, T->width = T->ptr[0]->width + T->ptr[1]->width + 2;
-            T->place = fill_temp_var(new_temp(), LEV, T->type, 'T', T->offset + T->ptr[0]->width + T->ptr[1]->width);
+            T->place = fill_temp_var(new_temp(), level, T->type, 'T', T->offset + T->ptr[0]->width + T->ptr[1]->width);
             opn1.kind = ID;
             opn1.data = symbol_table[T->ptr[0]->place].alias;
             opn1.type = T->ptr[0]->type;
@@ -441,7 +440,7 @@ void expression(ASTNode *T)
                 call_args.push_back(generate_code_node(ARG, opn1, opn2, result));
                 T0 = T0->ptr[1];
             }
-            T->place = fill_temp_var(new_temp(), LEV, T->type, 'T', T->offset + T->width - width);
+            T->place = fill_temp_var(new_temp(), level, T->type, 'T', T->offset + T->width - width);
             opn1.kind = ID;
             opn1.data = T->data;
             opn1.offset = rtn;
@@ -515,7 +514,7 @@ void semantic_analysis(ASTNode *T)
             T->code = merge_code_node({T->ptr[1]->code, T->ptr[2]->code, generate_label(T->ptr[2]->Snext)});
             break;
         case FUNC_DEC:
-            rtn = fill_symbol_table(get<string>(T->data), new_alias(), LEV, T->type, 'F', 0);
+            rtn = fill_symbol_table(get<string>(T->data), new_alias(), level, T->type, 'F', 0);
             if (rtn == -1)
             {
                 semantic_error(T->pos, get<string>(T->data), "Function Redeclaration.");
@@ -573,7 +572,7 @@ void semantic_analysis(ASTNode *T)
             // T->code = generate_code_node(PARAM, opn1, opn2, result);
             break;
         case COMP_STM:
-            LEV++;
+            level++;
             symbol_scope_chain_stack.push_back(symbol_table.size());
             T->width = 0;
             T->code = nullptr;
@@ -593,7 +592,7 @@ void semantic_analysis(ASTNode *T)
                 T->code = merge_code_node({T->code, T->ptr[1]->code});
             }
             print_symbol_table();
-            LEV--;
+            level--;
             symbol_table.resize(symbol_scope_chain_stack.back());
             symbol_scope_chain_stack.pop_back();
             break;
@@ -633,7 +632,7 @@ void semantic_analysis(ASTNode *T)
                     T0->ptr[1]->offset = T0->offset + width;
                 if (T0->ptr[0]->kind == ID)
                 {
-                    rtn = fill_symbol_table(get<string>(T0->ptr[0]->data), new_alias(), LEV, T0->ptr[0]->type, 'V', T->offset + T->width); // todo: offset count
+                    rtn = fill_symbol_table(get<string>(T0->ptr[0]->data), new_alias(), level, T0->ptr[0]->type, 'V', T->offset + T->width); // todo: offset count
                     if (rtn == -1)
                         semantic_error(T0->ptr[0]->pos, get<string>(T0->ptr[0]->data), "Variable re-declared.");
                     else
@@ -642,7 +641,7 @@ void semantic_analysis(ASTNode *T)
                 }
                 else if (T0->ptr[0]->kind == ASSIGNOP)
                 {
-                    rtn = fill_symbol_table(get<string>(T0->ptr[0]->ptr[0]->data), new_alias(), LEV, T0->ptr[0]->type, 'V', T->offset + T->width); // todo: offset count
+                    rtn = fill_symbol_table(get<string>(T0->ptr[0]->ptr[0]->data), new_alias(), level, T0->ptr[0]->type, 'V', T->offset + T->width); // todo: offset count
                     if (rtn == -1)
                         semantic_error(T0->ptr[0]->ptr[0]->pos, get<string>(T0->ptr[0]->ptr[0]->data), "Variable re-declared.");
                     else

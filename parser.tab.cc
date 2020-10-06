@@ -77,7 +77,7 @@ extern int yylineno;
 extern char *yytext;
 extern FILE *yyin;
 void yyerror(const char* fmt, ...);
-void display(ASTNode *,int);
+void print_ast_node(ASTNode *,int);
 int yylex();
 
 #line 84 "parser.tab.c"
@@ -1762,7 +1762,7 @@ yyreduce:
     {
   case 2:
 #line 49 "./parser.y"
-                       { display((yyvsp[0].ptr),0); entrypoint((yyvsp[0].ptr));}
+                       { print_ast_node((yyvsp[0].ptr),0); entrypoint((yyvsp[0].ptr));}
 #line 1767 "parser.tab.c"
     break;
 
