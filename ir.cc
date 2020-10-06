@@ -70,6 +70,7 @@ void print_lr(CodeNode *head)
 
             auto *alloc = builder_stack.back().CreateAlloca(Type::getInt32Ty(TheContext), nullptr, var_name);
             auto *store = builder_stack.back().CreateStore(l, alloc);
+
             val_table[var_name] = alloc;
             break;
         }
@@ -237,6 +238,9 @@ void print_lr(CodeNode *head)
         case EQ:
         {
             Value *val;
+
+            if (l->getType()->getTypeID() == llvm::Type::TypeID::PointerTyID) l = builder_stack.back().CreateLoad(l);
+            if (r->getType()->getTypeID() == llvm::Type::TypeID::PointerTyID) r = builder_stack.back().CreateLoad(r);
 
             if (h->op == EQ) val = builder_stack.back().CreateICmpEQ(l, r, "cmpres");
             else if (h->op == NEQ) val = builder_stack.back().CreateICmpNE(l, r, "cmpres");

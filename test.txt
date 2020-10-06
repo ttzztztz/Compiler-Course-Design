@@ -1,4 +1,12 @@
+int donothing() {
+    return 0;
+}
+
 int add(int a, int b) {
+    while (a > 0) {
+        donothing();
+        a = a - 1;
+    }
     return a + b;
 }
 
