@@ -92,8 +92,8 @@ void prn_symbol()
     int i = 0;
     printf("%6s %6s %6s  %6s %4s %6s\n", "Name", "Alias", "Level", "Type", "Flag", "Offset");
     for (i = 0; i < symbol_table.size(); i++)
-        printf("%6s %6s %6d  %6s %4c %6d\n", symbol_table[i].name,
-               symbol_table[i].alias, symbol_table[i].level,
+        printf("%6s %6s %6d  %6s %4c %6d\n", symbol_table[i].name.c_str(),
+               symbol_table[i].alias.c_str(), symbol_table[i].level,
                symbol_table[i].type == INT ? "int" : "float",
                symbol_table[i].flag, symbol_table[i].offset);
 }

@@ -10,5 +10,10 @@ int fn(int c, int c2, int c3, int c4, int c5) {
     }
 
     int tmp2 = add(tmp, c4);
+
+    if (tmp2 == 1) {
+        add(3, 4);
+        add(6, 7);
+    }
     return tmp2;
 }
