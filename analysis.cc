@@ -257,7 +257,8 @@ void bool_expression(ASTNode *T)
             else if (T->type_id == "!=")
                 op = NEQ;
             T->code = generate_code_node(op, opn1, opn2, result);
-            T->code = merge_code_node(4, T->ptr[0]->code, T->ptr[1]->code, T->code, generate_goto(T->Efalse));
+            T->code->data.push_back(generate_goto(T->Efalse));
+            T->code = merge_code_node(3, T->ptr[0]->code, T->ptr[1]->code, T->code);
             break;
         case AND:
         case OR:
@@ -696,7 +697,7 @@ void semantic_analysis(ASTNode *T)
             semantic_analysis(T->ptr[1]);
             if (T->width < T->ptr[1]->width)
                 T->width = T->ptr[1]->width;
-            T->code = merge_code_node(3, T->ptr[0]->code, generate_label(T->ptr[0]->Etrue), T->ptr[1]->code);
+            T->code = merge_code_node(4, T->ptr[0]->code, generate_label(T->ptr[0]->Etrue), T->ptr[1]->code, generate_goto(T->ptr[1]->Snext));
             break;
         case IF_THEN_ELSE:
             T->ptr[0]->Etrue = new_label();
@@ -712,8 +713,8 @@ void semantic_analysis(ASTNode *T)
             semantic_analysis(T->ptr[2]);
             if (T->width < T->ptr[2]->width)
                 T->width = T->ptr[2]->width;
-            T->code = merge_code_node(6, T->ptr[0]->code, generate_label(T->ptr[0]->Etrue), T->ptr[1]->code,
-                                      generate_goto(T->Snext), generate_label(T->ptr[0]->Efalse), T->ptr[2]->code);
+            T->code = merge_code_node(7, T->ptr[0]->code, generate_label(T->ptr[0]->Etrue), T->ptr[1]->code,
+                                      generate_goto(T->Snext), generate_label(T->ptr[0]->Efalse), T->ptr[2]->code, generate_goto(T->Snext));
             break;
         case WHILE:
             T->ptr[0]->Etrue = new_label();

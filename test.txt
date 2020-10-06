@@ -7,8 +7,14 @@ int fn(int c, int c2, int c3, int c4, int c5) {
     int tmp2 = add(tmp, c4);
 
     if (tmp2 == 1) {
-        add(3, 4);
+        if (tmp >= 5) {
+            add(3, 4);
+        } else {
+            add(9, 12);
+        }
         add(6, 7);
+    } else {
+        add(10, 12);
     }
 
     return tmp2;

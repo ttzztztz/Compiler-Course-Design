@@ -14,9 +14,10 @@
 
 #include "def.h"
 #include "iostream"
+#include "list"
 
 using namespace llvm;
-using std::pair, std::tuple;
+using std::pair, std::tuple, std::list;
 
 extern vector<Symbol> symbol_table;
 
@@ -53,7 +54,7 @@ void print_lr(CodeNode *head)
     unordered_map<string, BasicBlock *> label_table;
 
     unordered_map<string, vector<pair<Instruction *, IRBuilderBase::InsertPoint>>> unfinished_goto_statement;
-    unordered_map<string, vector<tuple<Instruction *, IRBuilderBase::InsertPoint, Value *>>> unfinished_br_statement;
+    list<tuple<Instruction *, IRBuilderBase::InsertPoint, Value *, string, string>> unfinished_br_statement;
 
     CodeNode *h = head;
     do
@@ -188,14 +189,21 @@ void print_lr(CodeNode *head)
                 }
             }
 
-            if (unfinished_br_statement.count(label))
+            for (auto it = unfinished_br_statement.begin(); it != unfinished_br_statement.end();)
             {
-                for (auto [val, insert_point, icmp_val] : unfinished_br_statement[label])
+                auto [val, insert_point, icmp_val, true_label, false_label] = *it;
+                if (label_table.count(true_label) && label_table.count(false_label))
                 {
                     IRBuilder<> builder(TheContext);
                     builder.SetInsertPoint(insert_point.getBlock(), insert_point.getPoint());
-                    auto new_val = builder.CreateCondBr(icmp_val, next_block, nullptr);
+                    auto new_val = builder.CreateCondBr(icmp_val, label_table[true_label], label_table[false_label]);
                     val->eraseFromParent();
+
+                    it = unfinished_br_statement.erase(it);
+                }
+                else
+                {
+                    it++;
                 }
             }
 
@@ -221,21 +229,35 @@ void print_lr(CodeNode *head)
             break;
         }
 
+        case JGE:
+        case JGT:
+        case JLE:
+        case JLT:
+        case NEQ:
         case EQ:
         {
-            Value *val = builder_stack.back().CreateICmpEQ(l, r, "cmpres");
-            const string &label = h->result.id;
-            if (label_table.count(label))
+            Value *val;
+
+            if (h->op == EQ) val = builder_stack.back().CreateICmpEQ(l, r, "cmpres");
+            else if (h->op == NEQ) val = builder_stack.back().CreateICmpNE(l, r, "cmpres");
+            else if (h->op == JGE) val = builder_stack.back().CreateICmpSGE(l, r, "cmpres");
+            else if (h->op == JGT) val = builder_stack.back().CreateICmpSGT(l, r, "cmpres");
+            else if (h->op == JLE) val = builder_stack.back().CreateICmpSLE(l, r, "cmpres");
+            else if (h->op == JLT) val = builder_stack.back().CreateICmpSLT(l, r, "cmpres");
+
+            const string &true_label = h->result.id, &false_label = h->data[0]->result.id;
+            if (label_table.count(true_label) && label_table.count(false_label))
             {
-                builder_stack.back().CreateCondBr(val, label_table[label], block_stack.back()->getUniqueSuccessor());
+                builder_stack.back().CreateCondBr(val, label_table[true_label], label_table[false_label]);
             }
             else
             {
                 Instruction *fake_node = builder_stack.back().CreateRetVoid();
                 auto insert_point = builder_stack.back().saveIP();
-                unfinished_br_statement[label].emplace_back(fake_node, insert_point, val);
+                unfinished_br_statement.emplace_back(fake_node, insert_point, val, true_label, false_label);
             }
         }
+
         }
 
         h = h->next;
