@@ -16,7 +16,7 @@
 #include "iostream"
 
 using namespace llvm;
-using std::pair;
+using std::pair, std::tuple;
 
 extern vector<Symbol> symbol_table;
 
@@ -46,12 +46,14 @@ void print_lr(CodeNode *head)
 
     vector<BasicBlock *> block_stack;
     vector<IRBuilder<>> builder_stack;
-    vector<Function*> function_stack;
+    vector<Function *> function_stack;
 
-    unordered_map<string, pair<Function*, FunctionType*>> function_table;
+    unordered_map<string, pair<Function *, FunctionType *>> function_table;
     unordered_map<string, Value *> val_table;
-    unordered_map<string, BasicBlock*> label_table;
-    unordered_map<string, vector<pair<Instruction*, IRBuilderBase::InsertPoint>>> unfinished_goto_statement;
+    unordered_map<string, BasicBlock *> label_table;
+
+    unordered_map<string, vector<pair<Instruction *, IRBuilderBase::InsertPoint>>> unfinished_goto_statement;
+    unordered_map<string, vector<tuple<Instruction *, IRBuilderBase::InsertPoint, Value *>>> unfinished_br_statement;
 
     CodeNode *h = head;
     do
@@ -155,10 +157,12 @@ void print_lr(CodeNode *head)
             function_stack.push_back(function_value);
             break;
         }
-        case CALL: {
+        case CALL:
+        {
             auto [fn, fn_type] = function_table[h->opn1.id];
-            vector<Value*> parameters;
-            for (auto arg : h->data) {
+            vector<Value *> parameters;
+            for (auto arg : h->data)
+            {
                 parameters.push_back(val_table[arg->result.id]);
             }
 
@@ -166,16 +170,16 @@ void print_lr(CodeNode *head)
             break;
         }
 
-        case LABEL: {
-            const string& label = h->result.id;
+        case LABEL:
+        {
+            const string &label = h->result.id;
             BasicBlock *next_block = BasicBlock::Create(TheContext, label, function_stack.back());
-            builder_stack.back().CreateBr(next_block);
-            block_stack.push_back(next_block);
-            builder_stack.push_back(IRBuilder<>(next_block));
             label_table[label] = next_block;
 
-            if (unfinished_goto_statement.count(label)) {
-                for (auto [val, insert_point] : unfinished_goto_statement[label]) {
+            if (unfinished_goto_statement.count(label))
+            {
+                for (auto [val, insert_point] : unfinished_goto_statement[label])
+                {
                     IRBuilder<> builder(TheContext);
                     builder.SetInsertPoint(insert_point.getBlock(), insert_point.getPoint());
                     auto new_val = builder.CreateBr(next_block);
@@ -183,21 +187,55 @@ void print_lr(CodeNode *head)
                     val->eraseFromParent();
                 }
             }
+
+            if (unfinished_br_statement.count(label))
+            {
+                for (auto [val, insert_point, icmp_val] : unfinished_br_statement[label])
+                {
+                    IRBuilder<> builder(TheContext);
+                    builder.SetInsertPoint(insert_point.getBlock(), insert_point.getPoint());
+                    auto new_val = builder.CreateCondBr(icmp_val, next_block, nullptr);
+                    val->eraseFromParent();
+                }
+            }
+
+            // builder_stack.back().CreateBr(next_block);
+            block_stack.push_back(next_block);
+            builder_stack.push_back(IRBuilder<>(next_block));
             break;
         }
 
-        case GOTO: {
-            const string& label = h->result.id;
-            if (label_table.count(label)) {
+        case GOTO:
+        {
+            const string &label = h->result.id;
+            if (label_table.count(label))
+            {
                 builder_stack.back().CreateBr(label_table[label]);
-            } else {
-                Instruction* fake_node = builder_stack.back().CreateRetVoid();
+            }
+            else
+            {
+                Instruction *fake_node = builder_stack.back().CreateRetVoid();
                 auto insert_point = builder_stack.back().saveIP();
                 unfinished_goto_statement[label].emplace_back(fake_node, insert_point);
             }
             break;
         }
 
+        case EQ:
+        {
+            Value *val = builder_stack.back().CreateICmpEQ(l, r, "cmpres");
+            const string &label = h->result.id;
+            if (label_table.count(label))
+            {
+                builder_stack.back().CreateCondBr(val, label_table[label], block_stack.back()->getUniqueSuccessor());
+            }
+            else
+            {
+                Instruction *fake_node = builder_stack.back().CreateRetVoid();
+                auto insert_point = builder_stack.back().saveIP();
+                unfinished_br_statement[label].emplace_back(fake_node, insert_point, val);
+            }
+        }
         }
 
         h = h->next;
