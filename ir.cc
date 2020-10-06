@@ -9,6 +9,7 @@
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Type.h"
 #include "llvm/IR/Verifier.h"
+#include "llvm/Transforms/Utils/BasicBlockUtils.h"
 
 #include "def.h"
 #include "iostream"
@@ -138,7 +139,6 @@ void print_lr(CodeNode *head)
             FunctionType *function_type = FunctionType::get(return_type, parameters, false);
             Function *function_value = Function::Create(function_type, Function::ExternalLinkage, function_name, TheModule);
             BasicBlock *next_block = BasicBlock::Create(TheContext, "entry", function_value);
-
             function_table[function_name] = {function_value, function_type};
             int ptr = idx + 1;
             for (auto &arg : function_value->args())
@@ -165,11 +165,9 @@ void print_lr(CodeNode *head)
         }
 
         case LABEL: {
-            std::cout << h->result.id << std::endl;
             BasicBlock *next_block = BasicBlock::Create(TheContext, h->result.id, function_stack.back());
             block_stack.push_back(next_block);
             builder_stack.push_back(IRBuilder<>(next_block));
-
             label_table[h->result.id] = next_block;
             break;
         }
