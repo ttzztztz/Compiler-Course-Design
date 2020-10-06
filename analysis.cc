@@ -843,10 +843,7 @@ void print_ir_old(CodeNode *head)
             printf("  ARG %s\n", get<string>(h->result.data).c_str());
             break;
         case CALL:
-            if (opnstr1 == "write")
-                printf("  CALL  %s\n", opnstr1);
-            else
-                printf("  %s := CALL %s\n", resultstr, opnstr1);
+            printf("  %s := CALL %s\n", resultstr, opnstr1);
             break;
         case RETURN:
             if (h->result.kind)

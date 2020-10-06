@@ -1798,7 +1798,7 @@ yyreduce:
 
   case 8:
 #line 58 "./parser.y"
-                    {(yyval.ptr)=make_node(TYPE,yylineno);(yyval.ptr)->data = (yyvsp[0].type_id);(yyval.ptr)->type=((yyvsp[0].type_id) == "float")?FLOAT:INT;}
+                    {(yyval.ptr)=make_node(TYPE,yylineno);(yyval.ptr)->data = string((yyvsp[0].type_id));(yyval.ptr)->type=(string((yyvsp[0].type_id)) == "float")?FLOAT:INT;}
 #line 1803 "parser.tab.c"
     break;
 
