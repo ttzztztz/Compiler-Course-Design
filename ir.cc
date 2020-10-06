@@ -8,6 +8,7 @@
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Type.h"
+#include "llvm/IR/Instruction.h"
 #include "llvm/IR/Verifier.h"
 #include "llvm/Transforms/Utils/BasicBlockUtils.h"
 
@@ -50,6 +51,7 @@ void print_lr(CodeNode *head)
     unordered_map<string, pair<Function*, FunctionType*>> function_table;
     unordered_map<string, Value *> val_table;
     unordered_map<string, BasicBlock*> label_table;
+    unordered_map<string, vector<pair<Instruction*, IRBuilderBase::InsertPoint>>> unfinished_goto_statement;
 
     CodeNode *h = head;
     do
@@ -165,12 +167,37 @@ void print_lr(CodeNode *head)
         }
 
         case LABEL: {
-            BasicBlock *next_block = BasicBlock::Create(TheContext, h->result.id, function_stack.back());
+            const string& label = h->result.id;
+            BasicBlock *next_block = BasicBlock::Create(TheContext, label, function_stack.back());
+            builder_stack.back().CreateBr(next_block);
             block_stack.push_back(next_block);
             builder_stack.push_back(IRBuilder<>(next_block));
-            label_table[h->result.id] = next_block;
+            label_table[label] = next_block;
+
+            if (unfinished_goto_statement.count(label)) {
+                for (auto [val, insert_point] : unfinished_goto_statement[label]) {
+                    IRBuilder<> builder(TheContext);
+                    builder.SetInsertPoint(insert_point.getBlock(), insert_point.getPoint());
+                    auto new_val = builder.CreateBr(next_block);
+
+                    val->eraseFromParent();
+                }
+            }
             break;
         }
+
+        case GOTO: {
+            const string& label = h->result.id;
+            if (label_table.count(label)) {
+                builder_stack.back().CreateBr(label_table[label]);
+            } else {
+                Instruction* fake_node = builder_stack.back().CreateRetVoid();
+                auto insert_point = builder_stack.back().saveIP();
+                unfinished_goto_statement[label].emplace_back(fake_node, insert_point);
+            }
+            break;
+        }
+
         }
 
         h = h->next;
