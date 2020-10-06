@@ -322,7 +322,7 @@ void expression(ASTNode *T)
             T->place = fill_temp_var(new_temp(), LEV, T->type, 'T', T->offset);
             T->type = INT;
             opn1.kind = INT;
-            opn1.data = T->data;
+            opn1.data = get<int>(T->data);
             result.kind = ID;
             result.data = symbol_table[T->place].alias;
             result.offset = symbol_table[T->place].offset;
@@ -333,7 +333,7 @@ void expression(ASTNode *T)
             T->place = fill_temp_var(new_temp(), LEV, T->type, 'T', T->offset);
             T->type = FLOAT;
             opn1.kind = FLOAT;
-            opn1.data = T->data;
+            opn1.data = get<float>(T->data);
             result.kind = ID;
             result.data = symbol_table[T->place].alias;
             result.offset = symbol_table[T->place].offset;

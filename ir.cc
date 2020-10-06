@@ -22,16 +22,13 @@ extern vector<Symbol> symbol_table;
 
 Value *prepare_opn(LLVMContext &TheContext, unordered_map<string, Value *> &val_table, const Operation &op)
 {
-    if (op.kind == INT)
+    switch (op.kind)
     {
+    case INT:
         return ConstantInt::get(Type::getInt32Ty(TheContext), get<int>(op.data));
-    }
-    else if (op.kind == FLOAT)
-    {
+    case FLOAT:
         return ConstantInt::get(Type::getInt32Ty(TheContext), get<float>(op.data));
-    }
-    else if (op.kind == ID)
-    {
+    case ID:
         if (val_table.count(get<string>(op.data)))
             return val_table[get<string>(op.data)];
     }
@@ -238,17 +235,24 @@ void print_lr(CodeNode *head)
         {
             Value *val;
 
-
             // type inconsistency
-            if (l->getType()->getTypeID() == llvm::Type::TypeID::PointerTyID && r->getType()->getTypeID() != llvm::Type::TypeID::PointerTyID) l = builder_stack.back().CreateLoad(l);
-            if (l->getType()->getTypeID() != llvm::Type::TypeID::PointerTyID && r->getType()->getTypeID() == llvm::Type::TypeID::PointerTyID) r = builder_stack.back().CreateLoad(r);
+            if (l->getType()->getTypeID() == llvm::Type::TypeID::PointerTyID && r->getType()->getTypeID() != llvm::Type::TypeID::PointerTyID)
+                l = builder_stack.back().CreateLoad(l);
+            if (l->getType()->getTypeID() != llvm::Type::TypeID::PointerTyID && r->getType()->getTypeID() == llvm::Type::TypeID::PointerTyID)
+                r = builder_stack.back().CreateLoad(r);
 
-            if (h->op == EQ) val = builder_stack.back().CreateICmpEQ(l, r, "cmpres");
-            else if (h->op == NEQ) val = builder_stack.back().CreateICmpNE(l, r, "cmpres");
-            else if (h->op == JGE) val = builder_stack.back().CreateICmpSGE(l, r, "cmpres");
-            else if (h->op == JGT) val = builder_stack.back().CreateICmpSGT(l, r, "cmpres");
-            else if (h->op == JLE) val = builder_stack.back().CreateICmpSLE(l, r, "cmpres");
-            else if (h->op == JLT) val = builder_stack.back().CreateICmpSLT(l, r, "cmpres");
+            if (h->op == EQ)
+                val = builder_stack.back().CreateICmpEQ(l, r, "cmpres");
+            else if (h->op == NEQ)
+                val = builder_stack.back().CreateICmpNE(l, r, "cmpres");
+            else if (h->op == JGE)
+                val = builder_stack.back().CreateICmpSGE(l, r, "cmpres");
+            else if (h->op == JGT)
+                val = builder_stack.back().CreateICmpSGT(l, r, "cmpres");
+            else if (h->op == JLE)
+                val = builder_stack.back().CreateICmpSLE(l, r, "cmpres");
+            else if (h->op == JLT)
+                val = builder_stack.back().CreateICmpSLT(l, r, "cmpres");
 
             const string &true_label = get<string>(h->result.data), &false_label = get<string>(h->data[0]->result.data);
             if (label_table.count(true_label) && label_table.count(false_label))
@@ -262,7 +266,6 @@ void print_lr(CodeNode *head)
                 unfinished_br_statement.emplace_back(fake_node, insert_point, val, true_label, false_label);
             }
         }
-
         }
 
         h = h->next;
