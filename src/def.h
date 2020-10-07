@@ -61,8 +61,7 @@ public:
     variant<int, float, string> data;
     ASTNode *ptr[4];
     int idx;
-    string Etrue, Efalse;
-    string Snext;
+    string Etrue, Efalse, Snext;
     CodeNode *code;
     int type;
     int pos;
