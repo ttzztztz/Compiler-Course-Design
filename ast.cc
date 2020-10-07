@@ -27,8 +27,6 @@ void print_ast_node(ASTNode *T, int indent)
     return;
 #endif
 
-    int i = 1;
-    ASTNode *T0;
     if (T)
     {
         switch (T->kind)
@@ -125,8 +123,9 @@ void print_ast_node(ASTNode *T, int indent)
             print_ast_node(T->ptr[1], indent + 2);
             break;
         case DEC_LIST:
+        {
             printf("%*cVariable Name Decl:\n", indent, ' ');
-            T0 = T;
+            ASTNode *T0 = T;
             while (T0)
             {
                 if (T0->ptr[0]->kind == ID)
@@ -139,6 +138,7 @@ void print_ast_node(ASTNode *T, int indent)
                 T0 = T0->ptr[1];
             }
             break;
+        }
         case ID:
             printf("%*cID: %s\n", indent, ' ', get<string>(T->data).c_str());
             break;
@@ -172,7 +172,8 @@ void print_ast_node(ASTNode *T, int indent)
             print_ast_node(T->ptr[0], indent + 2);
             break;
         case ARGS:
-            i = 1;
+        {
+            int i = 1;
             while (T)
             {
                 ASTNode *T0 = T->ptr[0];
@@ -182,6 +183,7 @@ void print_ast_node(ASTNode *T, int indent)
             }
             printf("\n");
             break;
+        }
         }
     }
 }
