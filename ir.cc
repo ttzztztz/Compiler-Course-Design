@@ -56,10 +56,13 @@ void print_lr(CodeNode *head)
         {
             string var_name(get<string>(h->result.data));
 
-            Value* alloc = nullptr;
-            if (val_table.count(var_name)) {
+            Value *alloc = nullptr;
+            if (val_table.count(var_name))
+            {
                 alloc = val_table[var_name];
-            } else {
+            }
+            else
+            {
                 alloc = builder_stack.back().CreateAlloca(Type::getInt32Ty(TheContext), nullptr, var_name);
                 val_table[var_name] = alloc;
             }
@@ -94,8 +97,10 @@ void print_lr(CodeNode *head)
                 res = builder_stack.back().CreateSub(l, r, get<string>(h->result.data));
             else if (h->op == STAR)
                 res = builder_stack.back().CreateMul(l, r, get<string>(h->result.data));
-            else if (h->op == DIV) res = builder_stack.back().CreateSDiv(l, r, get<string>(h->result.data));
-            else if (h->op == MOD) res = builder_stack.back().CreateSRem(l, r, get<string>(h->result.data));
+            else if (h->op == DIV)
+                res = builder_stack.back().CreateSDiv(l, r, get<string>(h->result.data));
+            else if (h->op == MOD)
+                res = builder_stack.back().CreateSRem(l, r, get<string>(h->result.data));
 
             val_table[get<string>(h->result.data)] = res;
             break;
@@ -105,8 +110,12 @@ void print_lr(CodeNode *head)
         {
             if (h->result.kind)
             {
-                auto *load_val = builder_stack.back().CreateLoad(Type::getInt32Ty(TheContext), val_table[get<string>(h->result.data)], "");
-                builder_stack.back().CreateRet(load_val);
+                Value *return_val = val_table[get<string>(h->result.data)];
+                if (return_val->getType()->isPointerTy())
+                {
+                    return_val = builder_stack.back().CreateLoad(Type::getInt32Ty(TheContext), return_val, "");
+                }
+                builder_stack.back().CreateRet(return_val);
             }
             else
             {
@@ -233,9 +242,9 @@ void print_lr(CodeNode *head)
             Value *val;
 
             // type inconsistency
-            if (l->getType()->getTypeID() == llvm::Type::TypeID::PointerTyID && r->getType()->getTypeID() != llvm::Type::TypeID::PointerTyID)
+            if (l && l->getType()->isPointerTy())
                 l = builder_stack.back().CreateLoad(Type::getInt32Ty(TheContext), l, "");
-            if (l->getType()->getTypeID() != llvm::Type::TypeID::PointerTyID && r->getType()->getTypeID() == llvm::Type::TypeID::PointerTyID)
+            if (r && r->getType()->isPointerTy())
                 r = builder_stack.back().CreateLoad(Type::getInt32Ty(TheContext), r, "");
 
             if (h->op == EQ)
@@ -271,10 +280,8 @@ void print_lr(CodeNode *head)
     TheModule.print(errs(), nullptr);
     verifyModule(TheModule, &(errs()));
 
-    std::unique_ptr<Module> ptr(&TheModule);
-    ExecutionEngine *engine = EngineBuilder(std::move(ptr)).create();
-    engine->finalizeObject();
-    engine->runFunction(function_table["main"].first, {});
-
-    outs().flush();
+    // std::unique_ptr<Module> ptr(&TheModule);
+    // ExecutionEngine *engine = EngineBuilder(std::move(ptr)).create();
+    // engine->finalizeObject();
+    // engine->runFunction(function_table["main"].first, {});
 }
