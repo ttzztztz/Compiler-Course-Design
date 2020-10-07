@@ -164,7 +164,7 @@ void ext_var_list(ASTNode *T)
         if (fill_result == nullopt)
             throw_semantic_error(T->pos, get<string>(T->data), "Redecl Variable");
         else
-            T->place = fill_result.value();
+            T->idx = fill_result.value();
         T->num = 1;
         break;
     }
@@ -219,9 +219,9 @@ void bool_expression(ASTNode *T)
             expression(T->ptr[0]);
             expression(T->ptr[1]);
             opn1.kind = ID;
-            opn1.data = symbol_table[T->ptr[0]->place].alias;
+            opn1.data = symbol_table[T->ptr[0]->idx].alias;
             opn2.kind = ID;
-            opn2.data = symbol_table[T->ptr[1]->place].alias;
+            opn2.data = symbol_table[T->ptr[1]->idx].alias;
             result.kind = ID;
             result.data = T->Etrue;
             if (get<string>(T->data) == "<")
@@ -287,7 +287,7 @@ void expression(ASTNode *T)
                 throw_semantic_error(T->pos, get<string>(T->data), "Type doesn't match.");
             else
             {
-                T->place = fill_result.value().idx;
+                T->idx = fill_result.value().idx;
                 T->code = nullptr;
                 T->type = fill_result.value().type;
             }
@@ -296,24 +296,24 @@ void expression(ASTNode *T)
         case INT:
         {
             Operation opn1, opn2, result;
-            T->place = fill_temp_var(new_temp(), level, T->type, 'T');
+            T->idx = fill_temp_var(new_temp(), level, T->type, 'T');
             T->type = INT;
             opn1.kind = INT;
             opn1.data = get<int>(T->data);
             result.kind = ID;
-            result.data = symbol_table[T->place].alias;
+            result.data = symbol_table[T->idx].alias;
             T->code = generate_code_node(ASSIGNOP, opn1, opn2, result);
             break;
         }
         case FLOAT:
         {
             Operation opn1, opn2, result;
-            T->place = fill_temp_var(new_temp(), level, T->type, 'T');
+            T->idx = fill_temp_var(new_temp(), level, T->type, 'T');
             T->type = FLOAT;
             opn1.kind = FLOAT;
             opn1.data = get<float>(T->data);
             result.kind = ID;
-            result.data = symbol_table[T->place].alias;
+            result.data = symbol_table[T->idx].alias;
             T->code = generate_code_node(ASSIGNOP, opn1, opn2, result);
             break;
         }
@@ -332,9 +332,9 @@ void expression(ASTNode *T)
                 T->type = T->ptr[0]->type;
                 T->code = merge_code_node({T->ptr[0]->code, T->ptr[1]->code});
                 opn1.kind = ID;
-                opn1.data = symbol_table[T->ptr[1]->place].alias;
+                opn1.data = symbol_table[T->ptr[1]->idx].alias;
                 result.kind = ID;
-                result.data = symbol_table[T->ptr[0]->place].alias;
+                result.data = symbol_table[T->ptr[0]->idx].alias;
                 T->code = merge_code_node({T->code, generate_code_node(ASSIGNOP, opn1, opn2, result)});
             }
             break;
@@ -361,15 +361,15 @@ void expression(ASTNode *T)
                 T->type = FLOAT;
             else
                 T->type = INT;
-            T->place = fill_temp_var(new_temp(), level, T->type, 'T');
+            T->idx = fill_temp_var(new_temp(), level, T->type, 'T');
             opn1.kind = ID;
-            opn1.data = symbol_table[T->ptr[0]->place].alias;
+            opn1.data = symbol_table[T->ptr[0]->idx].alias;
             opn1.type = T->ptr[0]->type;
             opn2.kind = ID;
-            opn2.data = symbol_table[T->ptr[1]->place].alias;
+            opn2.data = symbol_table[T->ptr[1]->idx].alias;
             opn2.type = T->ptr[1]->type;
             result.kind = ID;
-            result.data = symbol_table[T->place].alias;
+            result.data = symbol_table[T->idx].alias;
             result.type = T->type;
             T->code = merge_code_node({T->ptr[0]->code, T->ptr[1]->code, generate_code_node(T->kind, opn1, opn2, result)});
             break;
@@ -410,15 +410,15 @@ void expression(ASTNode *T)
             while (T0)
             {
                 result.kind = ID;
-                result.data = symbol_table[T0->ptr[0]->place].alias;
+                result.data = symbol_table[T0->ptr[0]->idx].alias;
                 call_args.push_back(generate_code_node(ARG, opn1, opn2, result));
                 T0 = T0->ptr[1];
             }
-            T->place = fill_temp_var(new_temp(), level, T->type, 'T');
+            T->idx = fill_temp_var(new_temp(), level, T->type, 'T');
             opn1.kind = ID;
             opn1.data = T->data;
             result.kind = ID;
-            result.data = symbol_table[T->place].alias;
+            result.data = symbol_table[T->idx].alias;
 
             auto *call_code_node = generate_code_node(CALL, opn1, opn2, result);
             call_code_node->data = call_args;
@@ -479,7 +479,7 @@ void semantic_analysis(ASTNode *T, const string &function_name = "")
             }
             else
             {
-                T->place = fill_result.value();
+                T->idx = fill_result.value();
             }
             result.kind = ID;
             result.data = T->data;
@@ -520,7 +520,7 @@ void semantic_analysis(ASTNode *T, const string &function_name = "")
             }
             else
             {
-                T->ptr[1]->place = fill_result.value();
+                T->ptr[1]->idx = fill_result.value();
             }
             T->num = 1;
             result.kind = ID;
@@ -583,7 +583,7 @@ void semantic_analysis(ASTNode *T, const string &function_name = "")
                     }
                     else
                     {
-                        T0->ptr[0]->place = fill_result.value();
+                        T0->ptr[0]->idx = fill_result.value();
                     }
                 }
                 else if (T0->ptr[0]->kind == ASSIGNOP)
@@ -593,12 +593,12 @@ void semantic_analysis(ASTNode *T, const string &function_name = "")
                         throw_semantic_error(T0->ptr[0]->ptr[0]->pos, get<string>(T0->ptr[0]->ptr[0]->data), "Variable re-declared.");
                     else
                     {
-                        T0->ptr[0]->place = fill_result.value();
+                        T0->ptr[0]->idx = fill_result.value();
                         expression(T0->ptr[0]->ptr[1]);
                         opn1.kind = ID;
-                        opn1.data = symbol_table[T0->ptr[0]->ptr[1]->place].alias;
+                        opn1.data = symbol_table[T0->ptr[0]->ptr[1]->idx].alias;
                         result.kind = ID;
-                        result.data = symbol_table[T0->ptr[0]->place].alias;
+                        result.data = symbol_table[T0->ptr[0]->idx].alias;
                         T->code = merge_code_node({T->code, T0->ptr[0]->ptr[1]->code, generate_code_node(ASSIGNOP, opn1, opn2, result)});
                     }
                 }
@@ -668,7 +668,7 @@ void semantic_analysis(ASTNode *T, const string &function_name = "")
                 expression(T->ptr[0]);
 
                 result.kind = ID;
-                result.data = symbol_table[T->ptr[0]->place].alias;
+                result.data = symbol_table[T->ptr[0]->idx].alias;
                 T->code = merge_code_node({T->ptr[0]->code, generate_code_node(RETURN, opn1, opn2, result)});
 
                 auto function_symbol = search_symbol_table_with_flag(function_name, 'F');

@@ -60,7 +60,7 @@ public:
     int kind;
     variant<int, float, string> data;
     ASTNode *ptr[4];
-    int place;
+    int idx;
     string Etrue, Efalse;
     string Snext;
     CodeNode *code;
