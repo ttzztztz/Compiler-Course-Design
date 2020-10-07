@@ -6,3 +6,4 @@ parser.tab.c
 toy
 demo
 /.vscode/settings.json
+/build
