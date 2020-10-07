@@ -56,14 +56,19 @@ void print_lr(CodeNode *head)
         {
             string var_name(get<string>(h->result.data));
 
-            auto *alloc = builder_stack.back().CreateAlloca(Type::getInt32Ty(TheContext), nullptr, var_name);
+            Value* alloc = nullptr;
+            if (val_table.count(var_name)) {
+                alloc = val_table[var_name];
+            } else {
+                alloc = builder_stack.back().CreateAlloca(Type::getInt32Ty(TheContext), nullptr, var_name);
+                val_table[var_name] = alloc;
+            }
+
             if (l->getType()->isPointerTy())
             {
                 l = builder_stack.back().CreateLoad(Type::getInt32Ty(TheContext), l, "");
             }
             auto *store = builder_stack.back().CreateStore(l, alloc);
-
-            val_table[var_name] = alloc;
             break;
         }
 
@@ -270,4 +275,6 @@ void print_lr(CodeNode *head)
     ExecutionEngine *engine = EngineBuilder(std::move(ptr)).create();
     engine->finalizeObject();
     engine->runFunction(function_table["main"].first, {});
+
+    outs().flush();
 }

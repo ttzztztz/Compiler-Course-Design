@@ -12,6 +12,7 @@ tuple<Function*, FunctionType*, Function*, FunctionType*> inject_print_function(
     if (printf_func == nullptr)
     {
         printf_func = Function::Create(printf_func_type, GlobalValue::ExternalLinkage, "printf", module);
+        printf_func->setCallingConv(llvm::CallingConv::C);
     }
 
     FunctionType *print_int_func_type = FunctionType::get(
@@ -26,8 +27,8 @@ tuple<Function*, FunctionType*, Function*, FunctionType*> inject_print_function(
         block_builder.CreateGlobalStringPtr("%d\n"),
         print_int_func->getArg(0)
     };
-    block_builder.CreateCall(printf_func, parameters, "");
-    block_builder.CreateRet(ConstantInt::get(Type::getInt32Ty(ctx), 0));
+    auto ret = block_builder.CreateCall(printf_func, parameters, "");
+    block_builder.CreateRet(ret);
 
     return { printf_func, printf_func_type, print_int_func, print_int_func_type };
 }
