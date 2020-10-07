@@ -23,7 +23,7 @@ Value *prepare_opn(LLVMContext &TheContext, unordered_map<string, Value *> &val_
     return nullptr;
 }
 
-void print_lr(CodeNode *head)
+void print_llvm_ir(CodeNode *head)
 {
     LLVMContext TheContext;
     Module TheModule("code", TheContext);
@@ -47,8 +47,6 @@ void print_lr(CodeNode *head)
     CodeNode *h = head;
     do
     {
-        Value *val = nullptr;
-
         Value *l = prepare_opn(TheContext, val_table, h->opn1), *r = prepare_opn(TheContext, val_table, h->opn2);
         switch (h->op)
         {
@@ -71,7 +69,7 @@ void print_lr(CodeNode *head)
             {
                 l = builder_stack.back().CreateLoad(Type::getInt32Ty(TheContext), l, "");
             }
-            auto *store = builder_stack.back().CreateStore(l, alloc);
+            builder_stack.back().CreateStore(l, alloc);
             break;
         }
 
@@ -127,12 +125,12 @@ void print_lr(CodeNode *head)
         case FUNCTION:
         {
             const string &function_name = get<string>(h->result.data);
-            const int idx = search_symbol_table_with_flag(function_name, 'F');
+            const auto fill_result = search_symbol_table_with_flag(function_name, 'F');
 
             vector<Type *> parameters;
-            for (int i = 0; i < symbol_table[idx].paramnum; i++)
+            for (int i = 0; i < fill_result.value().paramnum; i++)
             {
-                const int offset = i + idx + 1;
+                const int offset = i + fill_result.value().idx + 1;
                 if (symbol_table[offset].type == INT)
                 {
                     parameters.push_back(Type::getInt32Ty(TheContext));
@@ -147,7 +145,7 @@ void print_lr(CodeNode *head)
             Function *function_value = Function::Create(function_type, Function::ExternalLinkage, function_name, TheModule);
             BasicBlock *next_block = BasicBlock::Create(TheContext, "entry", function_value);
             function_table[function_name] = {function_value, function_type};
-            int ptr = idx + 1;
+            int ptr = fill_result.value().idx + 1;
             for (auto &arg : function_value->args())
             {
                 val_table[symbol_table[ptr].alias] = &arg;
@@ -186,7 +184,7 @@ void print_lr(CodeNode *head)
                 {
                     IRBuilder<> builder(TheContext);
                     builder.SetInsertPoint(insert_point.getBlock(), insert_point.getPoint());
-                    auto new_val = builder.CreateBr(next_block);
+                    builder.CreateBr(next_block);
 
                     val->eraseFromParent();
                 }
@@ -199,7 +197,7 @@ void print_lr(CodeNode *head)
                 {
                     IRBuilder<> builder(TheContext);
                     builder.SetInsertPoint(insert_point.getBlock(), insert_point.getPoint());
-                    auto new_val = builder.CreateCondBr(icmp_val, label_table[true_label], label_table[false_label]);
+                    builder.CreateCondBr(icmp_val, label_table[true_label], label_table[false_label]);
                     val->eraseFromParent();
 
                     it = unfinished_br_statement.erase(it);
@@ -212,7 +210,7 @@ void print_lr(CodeNode *head)
 
             // builder_stack.back().CreateBr(next_block);
             block_stack.push_back(next_block);
-            builder_stack.push_back(IRBuilder<>(next_block));
+            builder_stack.emplace_back(next_block);
             break;
         }
 
