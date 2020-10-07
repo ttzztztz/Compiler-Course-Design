@@ -1,10 +1,12 @@
 #include "def.h"
 #include "parser.tab.h"
 
-Operation::Operation() : data(0), kind(0), type(0), level(0), offset(0) {}
+Operation::Operation() : data(0), kind(0), type(0), level(0) {}
 CodeNode::CodeNode() : op(0), next(nullptr), prior(nullptr) {}
-ASTNode::ASTNode() : kind(0), ptr{nullptr, nullptr, nullptr, nullptr}, place(0), type(0), pos(0), offset(0), width(0), num(0), code(nullptr) {}
-Symbol::Symbol() : level(0), type(0), paramnum(0), flag(0), offset(0), idx(0) {}
+ASTNode::ASTNode() : kind(0), ptr{nullptr, nullptr, nullptr, nullptr}, place(0), type(0), pos(0), num(0), code(nullptr) {}
+Symbol::Symbol() : level(0), type(0), paramnum(0), flag(0), idx(0) {}
+
+extern vector<Symbol> symbol_table;
 
 ASTNode *make_node(int kind, int pos, vector<ASTNode *> nodes)
 {
@@ -186,4 +188,17 @@ void print_ast_node(ASTNode *T, int indent)
         }
         }
     }
+}
+
+void print_symbol_table()
+{
+#if PRINT_SYMBOL_TABLE == 0
+    return;
+#endif
+
+    printf("%6s %6s %6s  %6s %4s %6s\n", "Name", "Alias", "Level", "Type", "Flag");
+    for (int i = 0; i < symbol_table.size(); i++)
+        printf("%6s %6s %6d  %6s %4c\n", symbol_table[i].name.c_str(),
+               symbol_table[i].alias.c_str(), symbol_table[i].level,
+               symbol_table[i].type == INT ? "int" : "float");
 }

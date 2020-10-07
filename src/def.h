@@ -29,10 +29,8 @@
 using namespace llvm;
 using std::string, std::unordered_map, std::vector, std::variant, std::get, std::tuple, std::optional, std::nullopt;
 
-#define PRINT_AST 0
-#define PRINT_SYMBOL_TABLE 0
-
-#define DX 3 * sizeof(int)
+#define PRINT_AST 1
+#define PRINT_SYMBOL_TABLE 1
 
 class Operation
 {
@@ -41,7 +39,6 @@ public:
     int type;
     variant<int, float, string> data;
     int level;
-    int offset;
 
     Operation();
 };
@@ -69,8 +66,6 @@ public:
     CodeNode *code;
     int type;
     int pos;
-    int offset;
-    int width;
     int num;
 
     ASTNode();
@@ -85,7 +80,6 @@ public:
     int paramnum;
     string alias;
     char flag;
-    int offset;
     int idx;
 
     Symbol();
@@ -98,3 +92,4 @@ void expression(ASTNode *T);
 void print_llvm_ir(CodeNode *head);
 optional<Symbol> search_symbol_table_with_flag(const string& name, char flag);
 tuple<Function*, FunctionType*, Function*, FunctionType*> inject_print_function(LLVMContext &ctx, IRBuilder<> &builder, Module &module);
+void print_symbol_table();
