@@ -36,8 +36,11 @@ void print_llvm_ir(CodeNode *head)
     unordered_map<string, Value *> val_table;
     unordered_map<string, BasicBlock *> label_table;
 
-    unordered_map<string, vector<pair<Instruction *, IRBuilderBase::InsertPoint>>> unfinished_goto_statement;
-    list<tuple<Instruction *, IRBuilderBase::InsertPoint, Value *, string, string>> unfinished_br_statement;
+    typedef pair<Instruction *, IRBuilderBase::InsertPoint> DeferredGotoStatementType;
+    typedef tuple<Instruction *, IRBuilderBase::InsertPoint, Value *, string, string> DeferredBrStatementType;
+
+    unordered_map<string, vector<DeferredGotoStatementType>> deferred_goto_statement;
+    list<DeferredBrStatementType> deferred_br_statement;
 
     builder_stack.emplace_back(IRBuilder<>(TheContext));
     auto [printf_func, printf_func_type, print_int_func, print_int_func_type] = inject_print_function(TheContext, builder_stack.back(), TheModule);
@@ -178,9 +181,9 @@ void print_llvm_ir(CodeNode *head)
             BasicBlock *next_block = BasicBlock::Create(TheContext, label, function_stack.back());
             label_table[label] = next_block;
 
-            if (unfinished_goto_statement.count(label))
+            if (deferred_goto_statement.count(label))
             {
-                for (auto [val, insert_point] : unfinished_goto_statement[label])
+                for (auto [val, insert_point] : deferred_goto_statement[label])
                 {
                     IRBuilder<> builder(TheContext);
                     builder.SetInsertPoint(insert_point.getBlock(), insert_point.getPoint());
@@ -190,7 +193,7 @@ void print_llvm_ir(CodeNode *head)
                 }
             }
 
-            for (auto it = unfinished_br_statement.begin(); it != unfinished_br_statement.end();)
+            for (auto it = deferred_br_statement.begin(); it != deferred_br_statement.end();)
             {
                 auto [val, insert_point, icmp_val, true_label, false_label] = *it;
                 if (label_table.count(true_label) && label_table.count(false_label))
@@ -200,7 +203,7 @@ void print_llvm_ir(CodeNode *head)
                     builder.CreateCondBr(icmp_val, label_table[true_label], label_table[false_label]);
                     val->eraseFromParent();
 
-                    it = unfinished_br_statement.erase(it);
+                    it = deferred_br_statement.erase(it);
                 }
                 else
                 {
@@ -225,7 +228,7 @@ void print_llvm_ir(CodeNode *head)
             {
                 Instruction *fake_node = builder_stack.back().CreateRetVoid();
                 auto insert_point = builder_stack.back().saveIP();
-                unfinished_goto_statement[label].emplace_back(fake_node, insert_point);
+                deferred_goto_statement[label].emplace_back(fake_node, insert_point);
             }
             break;
         }
@@ -267,7 +270,7 @@ void print_llvm_ir(CodeNode *head)
             {
                 Instruction *fake_node = builder_stack.back().CreateRetVoid();
                 auto insert_point = builder_stack.back().saveIP();
-                unfinished_br_statement.emplace_back(fake_node, insert_point, val, true_label, false_label);
+                deferred_br_statement.emplace_back(fake_node, insert_point, val, true_label, false_label);
             }
         }
         }

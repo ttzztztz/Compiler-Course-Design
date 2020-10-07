@@ -33,6 +33,29 @@ void print_ast_node(ASTNode *T, int indent)
     {
         switch (T->kind)
         {
+        case INT:
+            printf("%*cINT: %d\n", indent, ' ', get<int>(T->data));
+            break;
+        case ID:
+            printf("%*cID: %s\n", indent, ' ', get<string>(T->data).c_str());
+            break;
+        case TYPE:
+            printf("%*cType: %s\n", indent, ' ', get<string>(T->data).c_str());
+            break;
+        case FLOAT:
+            printf("%*cFLAOT: %f\n", indent, ' ', get<float>(T->data));
+            break;
+        case WHILE:
+            printf("%*cLoop Statement: (%d)\n", indent, ' ', T->pos);
+            printf("%*cLoop Condition: \n", indent + 2, ' ');
+            print_ast_node(T->ptr[0], indent + 4);
+            printf("%*cLoop Body: (%d)\n", indent + 2, ' ', T->pos);
+            print_ast_node(T->ptr[1], indent + 4);
+            break;
+        case RETURN:
+            printf("%*cReturn Expression:(%d)\n", indent, ' ', T->pos);
+            print_ast_node(T->ptr[0], indent + 2);
+            break;
         case EXT_DEF_LIST:
             print_ast_node(T->ptr[0], indent);
             print_ast_node(T->ptr[1], indent);
@@ -42,13 +65,6 @@ void print_ast_node(ASTNode *T, int indent)
             print_ast_node(T->ptr[0], indent + 2);
             printf("%*cVariable Name: \n", indent + 2, ' ');
             print_ast_node(T->ptr[1], indent + 4);
-            break;
-        case TYPE:
-            printf("%*cType: %s\n", indent, ' ', get<string>(T->data).c_str());
-            break;
-        case EXT_DEC_LIST:
-            print_ast_node(T->ptr[0], indent);
-            print_ast_node(T->ptr[1], indent);
             break;
         case FUNC_DEF:
             printf("%*cFunction Declaration: (%d)\n", indent, ' ', T->pos);
@@ -64,7 +80,13 @@ void print_ast_node(ASTNode *T, int indent)
                 print_ast_node(T->ptr[0], indent + 2);
             }
             else
+            {
                 printf("%*cFunction without Parameters: \n", indent + 2, ' ');
+            }
+            break;
+        case EXT_DEC_LIST:
+            print_ast_node(T->ptr[0], indent);
+            print_ast_node(T->ptr[1], indent);
             break;
         case PARAM_LIST:
             print_ast_node(T->ptr[0], indent);
@@ -72,52 +94,6 @@ void print_ast_node(ASTNode *T, int indent)
             break;
         case PARAM_DEC:
             printf("%*cType: %s, Parameter Name: %s\n", indent, ' ', T->ptr[0]->type == INT ? "int" : "float", get<string>(T->ptr[1]->data).c_str());
-            break;
-        case EXP_STMT:
-            printf("%*cExpression:(%d)\n", indent, ' ', T->pos);
-            print_ast_node(T->ptr[0], indent + 2);
-            break;
-        case RETURN:
-            printf("%*cReturn Expression:(%d)\n", indent, ' ', T->pos);
-            print_ast_node(T->ptr[0], indent + 2);
-            break;
-        case COMP_STM:
-            printf("%*cComposite Expression: (%d)\n", indent, ' ', T->pos);
-            printf("%*cVariable Declaration (Composite Expression) :\n", indent + 2, ' ');
-            print_ast_node(T->ptr[0], indent + 4);
-            printf("%*cExpression (Composite Expression) :\n", indent + 2, ' ');
-            print_ast_node(T->ptr[1], indent + 4);
-            break;
-        case STM_LIST:
-            print_ast_node(T->ptr[0], indent);
-            print_ast_node(T->ptr[1], indent);
-            break;
-        case WHILE:
-            printf("%*cLoop Statement: (%d)\n", indent, ' ', T->pos);
-            printf("%*cLoop Condition: \n", indent + 2, ' ');
-            print_ast_node(T->ptr[0], indent + 4);
-            printf("%*cLoop Body: (%d)\n", indent + 2, ' ', T->pos);
-            print_ast_node(T->ptr[1], indent + 4);
-            break;
-        case IF_THEN:
-            printf("%*cIF Expression: (%d)\n", indent, ' ', T->pos);
-            printf("%*cIF Conds:\n", indent + 2, ' ');
-            print_ast_node(T->ptr[0], indent + 4);
-            printf("%*cIF Body:(%d)\n", indent + 2, ' ', T->pos);
-            print_ast_node(T->ptr[1], indent + 4);
-            break;
-        case IF_THEN_ELSE:
-            printf("%*cIF Expression - Else: (%d)\n", indent, ' ', T->pos);
-            printf("%*cIF Conds: \n", indent + 2, ' ');
-            print_ast_node(T->ptr[0], indent + 4);
-            printf("%*cIF Body: (%d)\n", indent + 2, ' ', T->pos);
-            print_ast_node(T->ptr[1], indent + 4);
-            printf("%*cELSE Body: (%d)\n", indent + 4, ' ', T->pos);
-            print_ast_node(T->ptr[2], indent + 4);
-            break;
-        case DEF_LIST:
-            print_ast_node(T->ptr[0], indent);
-            print_ast_node(T->ptr[1], indent);
             break;
         case VAR_DEF:
             printf("%*cVariable Decl: (%d)\n", indent, ' ', T->pos);
@@ -141,32 +117,40 @@ void print_ast_node(ASTNode *T, int indent)
             }
             break;
         }
-        case ID:
-            printf("%*cID: %s\n", indent, ' ', get<string>(T->data).c_str());
+        case DEF_LIST:
+            print_ast_node(T->ptr[0], indent);
+            print_ast_node(T->ptr[1], indent);
             break;
-        case INT:
-            printf("%*cINT: %d\n", indent, ' ', get<int>(T->data));
+        case COMP_STM:
+            printf("%*cComposite Expression: (%d)\n", indent, ' ', T->pos);
+            printf("%*cVariable Declaration (Composite Expression) :\n", indent + 2, ' ');
+            print_ast_node(T->ptr[0], indent + 4);
+            printf("%*cExpression (Composite Expression) :\n", indent + 2, ' ');
+            print_ast_node(T->ptr[1], indent + 4);
             break;
-        case FLOAT:
-            printf("%*cFLAOT: %f\n", indent, ' ', get<float>(T->data));
+        case STM_LIST:
+            print_ast_node(T->ptr[0], indent);
+            print_ast_node(T->ptr[1], indent);
             break;
-        case ASSIGNOP:
-        case AND:
-        case OR:
-        case RELOP:
-        case PLUS:
-        case MINUS:
-        case STAR:
-        case MOD:
-        case DIV:
-            printf("%*c%s\n", indent, ' ', get<string>(T->data).c_str());
+        case EXP_STMT:
+            printf("%*cExpression:(%d)\n", indent, ' ', T->pos);
             print_ast_node(T->ptr[0], indent + 2);
-            print_ast_node(T->ptr[1], indent + 2);
             break;
-        case NOT:
-        case UMINUS:
-            printf("%*c%s\n", indent, ' ', get<string>(T->data).c_str());
-            print_ast_node(T->ptr[0], indent + 2);
+        case IF_THEN:
+            printf("%*cIF Expression: (%d)\n", indent, ' ', T->pos);
+            printf("%*cIF Conds:\n", indent + 2, ' ');
+            print_ast_node(T->ptr[0], indent + 4);
+            printf("%*cIF Body:(%d)\n", indent + 2, ' ', T->pos);
+            print_ast_node(T->ptr[1], indent + 4);
+            break;
+        case IF_THEN_ELSE:
+            printf("%*cIF Expression - Else: (%d)\n", indent, ' ', T->pos);
+            printf("%*cIF Conds: \n", indent + 2, ' ');
+            print_ast_node(T->ptr[0], indent + 4);
+            printf("%*cIF Body: (%d)\n", indent + 2, ' ', T->pos);
+            print_ast_node(T->ptr[1], indent + 4);
+            printf("%*cELSE Body: (%d)\n", indent + 4, ' ', T->pos);
+            print_ast_node(T->ptr[2], indent + 4);
             break;
         case FUNC_CALL:
             printf("%*cFunction Call: (%d)\n", indent, ' ', T->pos);
@@ -186,6 +170,24 @@ void print_ast_node(ASTNode *T, int indent)
             printf("\n");
             break;
         }
+        case ASSIGNOP:
+        case AND:
+        case OR:
+        case RELOP:
+        case PLUS:
+        case MINUS:
+        case STAR:
+        case DIV:
+        case MOD:
+            printf("%*c%s\n", indent, ' ', get<string>(T->data).c_str());
+            print_ast_node(T->ptr[0], indent + 2);
+            print_ast_node(T->ptr[1], indent + 2);
+            break;
+        case NOT:
+        case UMINUS:
+            printf("%*c%s\n", indent, ' ', get<string>(T->data).c_str());
+            print_ast_node(T->ptr[0], indent + 2);
+            break;
         }
     }
 }
