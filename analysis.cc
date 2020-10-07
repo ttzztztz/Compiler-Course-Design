@@ -373,6 +373,7 @@ void expression(ASTNode *T)
         case MINUS:
         case STAR:
         case DIV:
+        case MOD:
             T->ptr[0]->offset = T->offset;
             expression(T->ptr[0]);
             T->ptr[1]->offset = T->offset + T->ptr[0]->width;
