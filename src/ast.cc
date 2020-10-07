@@ -198,9 +198,10 @@ void print_symbol_table()
     return;
 #endif
 
-    printf("%6s %6s %6s  %6s %4s %6s\n", "Name", "Alias", "Level", "Type", "Flag");
+    printf("%9s %9s %9s %9s %9s\n", "Name", "Alias", "Level", "Type", "Flag");
     for (int i = 0; i < symbol_table.size(); i++)
-        printf("%6s %6s %6d  %6s %4c\n", symbol_table[i].name.c_str(),
+        printf("%9s %9s %9d %9s %9c\n", symbol_table[i].name.c_str(),
                symbol_table[i].alias.c_str(), symbol_table[i].level,
-               symbol_table[i].type == INT ? "int" : "float");
+               symbol_table[i].type == INT ? "int" : "float", symbol_table[i].flag);
+    printf("\n\n");
 }
