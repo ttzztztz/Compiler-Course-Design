@@ -7,3 +7,5 @@ toy
 demo
 /.vscode/settings.json
 /build
+/cmake-build-debug
+/.idea

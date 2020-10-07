@@ -4,7 +4,7 @@
 #include "unordered_map"
 #include "vector"
 
-using std::string, std::vector;
+using std::string, std::vector, std::to_string;
 vector<Symbol> symbol_table;
 vector<int> symbol_scope_chain_stack;
 
@@ -77,9 +77,10 @@ CodeNode *merge_code_node(const vector<CodeNode *> &list)
     return h1;
 }
 
-void semantic_error(int line, const string &msg1, const string &msg2)
+void throw_semantic_error(int line, const string &msg1, const string &msg2 = "")
 {
-    printf("Line %d Message: %s %s\n", line, msg1.c_str(), msg2.c_str());
+    const string err_msg("Line " + to_string(line) + ", Message: " + msg1 + " " + msg2);
+    throw std::runtime_error(err_msg);
 }
 
 void print_symbol_table()
@@ -96,30 +97,38 @@ void print_symbol_table()
                symbol_table[i].flag, symbol_table[i].offset);
 }
 
-int search_symbol_table(const string &name)
+optional<Symbol> search_symbol_table(const string &name)
 {
     for (int i = symbol_table.size() - 1; i >= 0; i--)
         if (symbol_table[i].name == name)
-            return i;
-    return -1;
+            return symbol_table[i];
+    return nullopt;
 }
 
-int search_symbol_table_with_flag(const string &name, char flag)
+optional<Symbol> search_symbol_table_with_flag(const string &name, char flag)
 {
     for (int i = symbol_table.size() - 1; i >= 0; i--)
         if (symbol_table[i].name == name && symbol_table[i].flag == flag)
-            return i;
-    return -1;
+            return symbol_table[i];
+    return nullopt;
 }
 
-int fill_symbol_table(const string &name, const string &alias, int level, int type, char flag, int offset)
+optional<Symbol> search_symbol_table_with_alias(const string &alias)
+{
+    for (int i = symbol_table.size() - 1; i >= 0; i--)
+        if (symbol_table[i].alias == alias)
+            return symbol_table[i];
+    return nullopt;
+}
+
+optional<int> fill_symbol_table(const string &name, const string &alias, int level, int type, char flag, int offset)
 {
     for (int i = symbol_table.size() - 1; i >= 0 && (symbol_table[i].level == level || level == 0); i--)
     {
         if (level == 0 && symbol_table[i].level == 1)
             continue;
         if (symbol_table[i].name == name)
-            return -1;
+            return nullopt;
     }
 
     Symbol sym{};
@@ -130,6 +139,7 @@ int fill_symbol_table(const string &name, const string &alias, int level, int ty
     sym.type = type;
     sym.flag = flag;
     sym.offset = offset;
+    sym.idx = symbol_table.size();
 
     symbol_table.emplace_back(sym);
     return symbol_table.size() - 1;
@@ -145,6 +155,7 @@ int fill_temp_var(const string &name, int level, int type, char flag, int offset
     sym.type = type;
     sym.flag = flag;
     sym.offset = offset;
+    sym.offset = symbol_table.size();
 
     symbol_table.emplace_back(sym);
     return symbol_table.size() - 1;
@@ -168,46 +179,46 @@ void ext_var_list(ASTNode *T)
         break;
     case ID:
     {
-        int rtn = fill_symbol_table(get<string>(T->data), new_alias(), level, T->type, 'V', T->offset);
-        if (rtn == -1)
-            semantic_error(T->pos, get<string>(T->data), "Redecl Variable");
+        auto fill_result = fill_symbol_table(get<string>(T->data), new_alias(), level, T->type, 'V', T->offset);
+        if (fill_result == nullopt)
+            throw_semantic_error(T->pos, get<string>(T->data), "Redecl Variable");
         else
-            T->place = rtn;
+            T->place = fill_result.value();
         T->num = 1;
         break;
     }
     }
 }
 
-int match_param(int i, ASTNode *T)
+bool match_param(const Symbol &symbol, ASTNode *T)
 {
-    int num = symbol_table[i].paramnum;
+    int num = symbol.paramnum;
     const int pos = T->pos;
     T = T->ptr[0];
     if (num == 0 && T == nullptr)
-        return 1;
+        return true;
     for (int j = 1; j <= num; j++)
     {
         if (!T)
         {
-            semantic_error(pos, "", "Too few parameters to call function!");
-            return 0;
+            throw_semantic_error(pos, "", "Too few parameters to call function!");
+            return false;
         }
-        int type1 = symbol_table[i + j].type;
+        int type1 = symbol_table[symbol.idx + j].type;
         int type2 = T->ptr[0]->type;
         if (type1 != type2)
         {
-            semantic_error(pos, "", "Function Type doesn't match.");
-            return 0;
+            throw_semantic_error(pos, "", "Function Type doesn't match.");
+            return false;
         }
         T = T->ptr[1];
     }
     if (T)
     {
-        semantic_error(pos, "", "Too much parameters to call function.");
-        return 0;
+        throw_semantic_error(pos, "", "Too much parameters to call function.");
+        return false;
     }
-    return 1;
+    return true;
 }
 
 void bool_expression(ASTNode *T)
@@ -298,17 +309,17 @@ void expression(ASTNode *T)
         {
         case ID:
         {
-            const int rtn = search_symbol_table(get<string>(T->data));
-            if (rtn == -1)
-                semantic_error(T->pos, get<string>(T->data), "Variable not declared.");
-            if (symbol_table[rtn].flag == 'F')
-                semantic_error(T->pos, get<string>(T->data), "Type doesn't match.");
+            auto fill_result = search_symbol_table(get<string>(T->data));
+            if (fill_result == nullopt)
+                throw_semantic_error(T->pos, get<string>(T->data), "Variable not declared.");
+            if (fill_result.value().flag == 'F')
+                throw_semantic_error(T->pos, get<string>(T->data), "Type doesn't match.");
             else
             {
-                T->place = rtn;
+                T->place = fill_result.value().idx;
                 T->code = nullptr;
-                T->type = symbol_table[rtn].type;
-                T->offset = symbol_table[rtn].offset;
+                T->type = fill_result.value().type;
+                T->offset = fill_result.value().offset;
                 T->width = 0;
             }
             break;
@@ -347,7 +358,7 @@ void expression(ASTNode *T)
 
             if (T->ptr[0]->kind != ID)
             {
-                semantic_error(T->pos, "", "Assign Expression needs to be left value.");
+                throw_semantic_error(T->pos, "", "Assign Expression needs to be left value.");
             }
             else
             {
@@ -418,18 +429,18 @@ void expression(ASTNode *T)
             vector<CodeNode *> call_args;
             Operation opn1, opn2, result;
 
-            const int rtn = search_symbol_table(get<string>(T->data));
-            if (rtn == -1)
+            auto fill_result = search_symbol_table(get<string>(T->data));
+            if (fill_result == nullopt)
             {
-                semantic_error(T->pos, get<string>(T->data), "Function not declared.");
+                throw_semantic_error(T->pos, get<string>(T->data), "Function not declared.");
                 break;
             }
-            if (symbol_table[rtn].flag != 'F')
+            if (fill_result.value().flag != 'F')
             {
-                semantic_error(T->pos, get<string>(T->data), "Not a function!");
+                throw_semantic_error(T->pos, get<string>(T->data), "Not a function!");
                 break;
             }
-            T->type = symbol_table[rtn].type;
+            T->type = fill_result.value().type;
             const int width = T->type == INT ? 4 : 8;
             if (T->ptr[0])
             {
@@ -443,7 +454,7 @@ void expression(ASTNode *T)
                 T->width = width;
                 T->code = nullptr;
             }
-            match_param(rtn, T);
+            match_param(fill_result.value(), T);
             ASTNode *T0 = T->ptr[0];
             while (T0)
             {
@@ -456,7 +467,7 @@ void expression(ASTNode *T)
             T->place = fill_temp_var(new_temp(), level, T->type, 'T', T->offset + T->width - width);
             opn1.kind = ID;
             opn1.data = T->data;
-            opn1.offset = rtn;
+            opn1.offset = fill_result.value().idx;
             result.kind = ID;
             result.data = symbol_table[T->place].alias;
             result.offset = symbol_table[T->place].offset;
@@ -484,7 +495,7 @@ void expression(ASTNode *T)
     }
 }
 
-void semantic_analysis(ASTNode *T)
+void semantic_analysis(ASTNode *T, const string &function_name = "")
 {
     if (T)
     {
@@ -494,12 +505,12 @@ void semantic_analysis(ASTNode *T)
             if (!T->ptr[0])
                 break;
             T->ptr[0]->offset = T->offset;
-            semantic_analysis(T->ptr[0]);
+            semantic_analysis(T->ptr[0], function_name);
             T->code = T->ptr[0]->code;
             if (T->ptr[1])
             {
                 T->ptr[1]->offset = T->ptr[0]->offset + T->ptr[0]->width;
-                semantic_analysis(T->ptr[1]);
+                semantic_analysis(T->ptr[1], function_name);
                 T->code = merge_code_node({T->code, T->ptr[1]->code});
             }
             break;
@@ -515,51 +526,53 @@ void semantic_analysis(ASTNode *T)
             T->ptr[1]->type = get<string>(T->ptr[0]->data) == "int" ? INT : FLOAT;
             T->width = 0;
             T->offset = DX;
-            semantic_analysis(T->ptr[1]);
+            semantic_analysis(T->ptr[1], get<string>(T->ptr[1]->data));
             T->offset += T->ptr[1]->width;
             T->ptr[2]->offset = T->offset;
             // T->ptr[2]->Snext = new_label();
-            semantic_analysis(T->ptr[2]);
+            semantic_analysis(T->ptr[2], get<string>(T->ptr[1]->data));
             symbol_table[T->ptr[1]->place].offset = T->offset + T->ptr[2]->width;
             T->code = merge_code_node({T->ptr[1]->code, T->ptr[2]->code});
             break;
         case FUNC_DEC:
         {
             Operation opn1, opn2, result;
-            const int rtn = fill_symbol_table(get<string>(T->data), new_alias(), level, T->type, 'F', 0);
-            if (rtn == -1)
+            const auto fill_result = fill_symbol_table(get<string>(T->data), new_alias(), level, T->type, 'F', 0);
+            if (fill_result == nullopt)
             {
-                semantic_error(T->pos, get<string>(T->data), "Function Redeclaration.");
+                throw_semantic_error(T->pos, get<string>(T->data), "Function Redeclaration.");
                 break;
             }
             else
-                T->place = rtn;
+            {
+                T->place = fill_result.value();
+            }
             result.kind = ID;
             result.data = T->data;
-            result.offset = rtn;
+            result.offset = fill_result.value();
             T->code = generate_code_node(FUNCTION, opn1, opn2, result);
             T->offset = DX;
             if (T->ptr[0])
             {
                 T->ptr[0]->offset = T->offset;
-                semantic_analysis(T->ptr[0]);
+                semantic_analysis(T->ptr[0], function_name);
                 T->width = T->ptr[0]->width;
-                symbol_table[rtn].paramnum = T->ptr[0]->num;
+                symbol_table[fill_result.value()].paramnum = T->ptr[0]->num;
                 T->code = merge_code_node({T->code, T->ptr[0]->code});
             }
             else
             {
-                symbol_table[rtn].paramnum = 0, T->width = 0;
+                symbol_table[fill_result.value()].paramnum = 0, T->width = 0;
             }
             break;
         }
         case PARAM_LIST:
             T->ptr[0]->offset = T->offset;
-            semantic_analysis(T->ptr[0]);
+            semantic_analysis(T->ptr[0], function_name);
             if (T->ptr[1])
             {
                 T->ptr[1]->offset = T->offset + T->ptr[0]->width;
-                semantic_analysis(T->ptr[1]);
+                semantic_analysis(T->ptr[1], function_name);
                 T->num = T->ptr[0]->num + T->ptr[1]->num;
                 T->width = T->ptr[0]->width + T->ptr[1]->width;
                 T->code = merge_code_node({T->ptr[0]->code, T->ptr[1]->code});
@@ -574,15 +587,19 @@ void semantic_analysis(ASTNode *T)
         case PARAM_DEC:
         {
             Operation opn1, opn2, result;
-            const int rtn = fill_symbol_table(get<string>(T->ptr[1]->data), new_alias(), 1, T->ptr[0]->type, 'P', T->offset);
-            if (rtn == -1)
-                semantic_error(T->ptr[1]->pos, get<string>(T->ptr[1]->data), "Function Parameter name re-declaration.");
+            auto fill_result = fill_symbol_table(get<string>(T->ptr[1]->data), new_alias(), 1, T->ptr[0]->type, 'P', T->offset);
+            if (fill_result == nullopt)
+            {
+                throw_semantic_error(T->ptr[1]->pos, get<string>(T->ptr[1]->data), "Function Parameter name re-declaration.");
+            }
             else
-                T->ptr[1]->place = rtn;
+            {
+                T->ptr[1]->place = fill_result.value();
+            }
             T->num = 1;
             T->width = T->ptr[0]->type == INT ? 4 : 8;
             result.kind = ID;
-            result.data = symbol_table[rtn].alias;
+            result.data = symbol_table[fill_result.value()].alias;
             result.offset = T->offset;
             // T->code = generate_code_node(PARAM, opn1, opn2, result);
             break;
@@ -595,7 +612,7 @@ void semantic_analysis(ASTNode *T)
             if (T->ptr[0])
             {
                 T->ptr[0]->offset = T->offset;
-                semantic_analysis(T->ptr[0]);
+                semantic_analysis(T->ptr[0], function_name);
                 T->width += T->ptr[0]->width;
                 T->code = T->ptr[0]->code;
             }
@@ -603,7 +620,7 @@ void semantic_analysis(ASTNode *T)
             {
                 T->ptr[1]->offset = T->offset + T->width;
                 T->ptr[1]->Snext = T->Snext;
-                semantic_analysis(T->ptr[1]);
+                semantic_analysis(T->ptr[1], function_name);
                 T->width += T->ptr[1]->width;
                 T->code = merge_code_node({T->code, T->ptr[1]->code});
             }
@@ -617,14 +634,14 @@ void semantic_analysis(ASTNode *T)
             if (T->ptr[0])
             {
                 T->ptr[0]->offset = T->offset;
-                semantic_analysis(T->ptr[0]);
+                semantic_analysis(T->ptr[0], function_name);
                 T->code = T->ptr[0]->code;
                 T->width = T->ptr[0]->width;
             }
             if (T->ptr[1])
             {
                 T->ptr[1]->offset = T->offset + T->ptr[0]->width;
-                semantic_analysis(T->ptr[1]);
+                semantic_analysis(T->ptr[1], function_name);
                 T->code = merge_code_node({T->code, T->ptr[1]->code});
                 T->width += T->ptr[1]->width;
             }
@@ -650,21 +667,25 @@ void semantic_analysis(ASTNode *T)
                     T0->ptr[1]->offset = T0->offset + width;
                 if (T0->ptr[0]->kind == ID)
                 {
-                    const int rtn = fill_symbol_table(get<string>(T0->ptr[0]->data), new_alias(), level, T0->ptr[0]->type, 'V', T->offset + T->width); // todo: offset count
-                    if (rtn == -1)
-                        semantic_error(T0->ptr[0]->pos, get<string>(T0->ptr[0]->data), "Variable re-declared.");
+                    auto fill_result = fill_symbol_table(get<string>(T0->ptr[0]->data), new_alias(), level, T0->ptr[0]->type, 'V', T->offset + T->width); // todo: offset count
+                    if (fill_result == nullopt)
+                    {
+                        throw_semantic_error(T0->ptr[0]->pos, get<string>(T0->ptr[0]->data), "Variable re-declared.");
+                    }
                     else
-                        T0->ptr[0]->place = rtn;
+                    {
+                        T0->ptr[0]->place = fill_result.value();
+                    }
                     T->width += width;
                 }
                 else if (T0->ptr[0]->kind == ASSIGNOP)
                 {
-                    const int rtn = fill_symbol_table(get<string>(T0->ptr[0]->ptr[0]->data), new_alias(), level, T0->ptr[0]->type, 'V', T->offset + T->width); // todo: offset count
-                    if (rtn == -1)
-                        semantic_error(T0->ptr[0]->ptr[0]->pos, get<string>(T0->ptr[0]->ptr[0]->data), "Variable re-declared.");
+                    auto fill_result = fill_symbol_table(get<string>(T0->ptr[0]->ptr[0]->data), new_alias(), level, T0->ptr[0]->type, 'V', T->offset + T->width); // todo: offset count
+                    if (fill_result == nullopt)
+                        throw_semantic_error(T0->ptr[0]->ptr[0]->pos, get<string>(T0->ptr[0]->ptr[0]->data), "Variable re-declared.");
                     else
                     {
-                        T0->ptr[0]->place = rtn;
+                        T0->ptr[0]->place = fill_result.value();
                         T0->ptr[0]->ptr[1]->offset = T->offset + T->width + width;
                         expression(T0->ptr[0]->ptr[1]);
                         opn1.kind = ID;
@@ -691,14 +712,14 @@ void semantic_analysis(ASTNode *T)
             else
                 T->ptr[0]->Snext = T->Snext;
             T->ptr[0]->offset = T->offset;
-            semantic_analysis(T->ptr[0]);
+            semantic_analysis(T->ptr[0], function_name);
             T->code = T->ptr[0]->code;
             T->width = T->ptr[0]->width;
             if (T->ptr[1])
             {
                 T->ptr[1]->Snext = T->Snext;
                 T->ptr[1]->offset = T->offset;
-                semantic_analysis(T->ptr[1]);
+                semantic_analysis(T->ptr[1], function_name);
                 if (T->ptr[0]->kind == RETURN || T->ptr[0]->kind == EXP_STMT || T->ptr[0]->kind == COMP_STM)
                     T->code = merge_code_node({T->code, T->ptr[1]->code});
                 else
@@ -714,7 +735,7 @@ void semantic_analysis(ASTNode *T)
             bool_expression(T->ptr[0]);
             T->width = T->ptr[0]->width;
             T->ptr[1]->Snext = T->Snext;
-            semantic_analysis(T->ptr[1]);
+            semantic_analysis(T->ptr[1], function_name);
             if (T->width < T->ptr[1]->width)
                 T->width = T->ptr[1]->width;
             T->code = merge_code_node({T->ptr[0]->code, generate_label(T->ptr[0]->Etrue), T->ptr[1]->code, generate_goto(T->ptr[1]->Snext)});
@@ -726,11 +747,11 @@ void semantic_analysis(ASTNode *T)
             bool_expression(T->ptr[0]);
             T->width = T->ptr[0]->width;
             T->ptr[1]->Snext = T->Snext;
-            semantic_analysis(T->ptr[1]);
+            semantic_analysis(T->ptr[1], function_name);
             if (T->width < T->ptr[1]->width)
                 T->width = T->ptr[1]->width;
             T->ptr[2]->Snext = T->Snext;
-            semantic_analysis(T->ptr[2]);
+            semantic_analysis(T->ptr[2], function_name);
             if (T->width < T->ptr[2]->width)
                 T->width = T->ptr[2]->width;
             T->code = merge_code_node({T->ptr[0]->code, generate_label(T->ptr[0]->Etrue), T->ptr[1]->code,
@@ -743,7 +764,7 @@ void semantic_analysis(ASTNode *T)
             bool_expression(T->ptr[0]);
             T->width = T->ptr[0]->width;
             T->ptr[1]->Snext = new_label();
-            semantic_analysis(T->ptr[1]);
+            semantic_analysis(T->ptr[1], function_name);
             if (T->width < T->ptr[1]->width)
                 T->width = T->ptr[1]->width;
             T->code = merge_code_node({generate_goto(T->ptr[1]->Snext), generate_label(T->ptr[1]->Snext), T->ptr[0]->code,
@@ -751,7 +772,7 @@ void semantic_analysis(ASTNode *T)
             break;
         case EXP_STMT:
             T->ptr[0]->offset = T->offset;
-            semantic_analysis(T->ptr[0]);
+            semantic_analysis(T->ptr[0], function_name);
             T->code = T->ptr[0]->code;
             T->width = T->ptr[0]->width;
             break;
@@ -763,13 +784,20 @@ void semantic_analysis(ASTNode *T)
                 T->ptr[0]->offset = T->offset;
                 expression(T->ptr[0]);
 
-                /*需要判断返回值类型是否匹配*/
-
                 T->width = T->ptr[0]->width;
                 result.kind = ID;
                 result.data = symbol_table[T->ptr[0]->place].alias;
                 result.offset = symbol_table[T->ptr[0]->place].offset;
                 T->code = merge_code_node({T->ptr[0]->code, generate_code_node(RETURN, opn1, opn2, result)});
+
+                auto function_symbol = search_symbol_table_with_flag(function_name, 'F');
+                auto return_var_name = get<string>(result.data);
+                auto return_var_symbol = search_symbol_table_with_alias(get<string>(result.data));
+                const int return_type = function_symbol.value().type;
+                if (return_var_symbol.value().type != return_type)
+                {
+                    throw_semantic_error(T->ptr[0]->pos, "Return type doesn't match.");
+                }
             }
             else
             {
@@ -804,7 +832,8 @@ void entrypoint(ASTNode *T)
     fill_symbol_table("print_int", "", 0, INT, 'F', 0);
     symbol_table[0].paramnum = 1;
     fill_symbol_table("0", "", 1, INT, 'P', 0);
+
     T->offset = 0;
     semantic_analysis(T);
-    print_lr(T->code);
+    print_llvm_ir(T->code);
 }

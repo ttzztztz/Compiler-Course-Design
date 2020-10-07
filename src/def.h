@@ -16,19 +16,18 @@
 #include "llvm/ExecutionEngine/GenericValue.h"
 #include "llvm/ExecutionEngine/Interpreter.h"
 
-#include "stdio.h"
-#include "stdlib.h"
-#include "stdarg.h"
-#include "parser.tab.h"
-
+#include "cstdio"
 #include "string"
 #include "unordered_map"
 #include "vector"
 #include "variant"
 #include "tuple"
+#include "optional"
+
+#include "parser.tab.h"
 
 using namespace llvm;
-using std::string, std::unordered_map, std::vector, std::variant, std::get, std::tuple;
+using std::string, std::unordered_map, std::vector, std::variant, std::get, std::tuple, std::optional, std::nullopt;
 
 #define PRINT_AST 0
 #define PRINT_SYMBOL_TABLE 0
@@ -86,7 +85,8 @@ public:
     int paramnum;
     string alias;
     char flag;
-    char offset;
+    int offset;
+    int idx;
 
     Symbol();
 };
@@ -95,7 +95,6 @@ ASTNode *make_node(int kind, int pos, vector<ASTNode*> nodes = vector<ASTNode*>{
 void entrypoint(ASTNode *T);
 void bool_expression(ASTNode *T);
 void expression(ASTNode *T);
-void objectCode(CodeNode *head);
-void print_lr(CodeNode *head);
-int search_symbol_table_with_flag(const string& name, char flag);
+void print_llvm_ir(CodeNode *head);
+optional<Symbol> search_symbol_table_with_flag(const string& name, char flag);
 tuple<Function*, FunctionType*, Function*, FunctionType*> inject_print_function(LLVMContext &ctx, IRBuilder<> &builder, Module &module);
