@@ -1,5 +1,6 @@
 .DS_Store
 parser
+compiler
 lex.yy.c
 parser.tab.c
 /.devcontainer
