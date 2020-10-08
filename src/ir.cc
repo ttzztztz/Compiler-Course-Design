@@ -38,10 +38,9 @@ void print_llvm_ir(CodeNode *head)
     unordered_map<string, BasicBlock *> label_table;
     unordered_set<BasicBlock*> finished_block;
 
-    typedef pair<Instruction *, IRBuilderBase::InsertPoint> DeferredGotoStatementType;
-    typedef tuple<Instruction *, IRBuilderBase::InsertPoint, Value *, string, string> DeferredBrStatementType;
+    typedef tuple<Instruction *, Value *, string, string> DeferredBrStatementType;
 
-    unordered_map<string, vector<DeferredGotoStatementType>> deferred_goto_statement;
+    unordered_map<string, vector<Instruction *>> deferred_goto_statement;
     list<DeferredBrStatementType> deferred_br_statement;
 
     builder_stack.emplace_back(IRBuilder<>(TheContext));
@@ -207,21 +206,20 @@ void print_llvm_ir(CodeNode *head)
 
             if (deferred_goto_statement.count(label))
             {
-                for (auto [val, insert_point] : deferred_goto_statement[label])
+                for (auto val : deferred_goto_statement[label])
                 {
                     BranchInst::Create(next_block, val);
                     val->eraseFromParent();
                 }
+                deferred_goto_statement.erase(label);
             }
 
             for (auto it = deferred_br_statement.begin(); it != deferred_br_statement.end();)
             {
-                auto [val, insert_point, icmp_val, true_label, false_label] = *it;
+                auto [val, icmp_val, true_label, false_label] = *it;
                 if (label_table.count(true_label) && label_table.count(false_label))
                 {
-                    IRBuilder<> builder(TheContext);
-                    builder.restoreIP(insert_point);
-                    builder.CreateCondBr(icmp_val, label_table[true_label], label_table[false_label]);
+                    BranchInst::Create(label_table[true_label], label_table[false_label], next_block, val);
                     val->eraseFromParent();
 
                     it = deferred_br_statement.erase(it);
