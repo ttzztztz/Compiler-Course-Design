@@ -56,6 +56,12 @@ void print_ast_node(ASTNode *T, int indent)
             printf("%*cReturn Expression:(%d)\n", indent, ' ', T->pos);
             print_ast_node(T->ptr[0], indent + 2);
             break;
+        case CONTINUE:
+            printf("%*cContinue Statement\n", indent, ' ');
+            break;
+        case BREAK:
+            printf("%*cBreak Statement\n", indent, ' ');
+            break;
         case EXT_DEF_LIST:
             print_ast_node(T->ptr[0], indent);
             print_ast_node(T->ptr[1], indent);

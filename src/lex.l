@@ -30,6 +30,8 @@ float  ([0-9]*\.[0-9]+)|([0-9]+\.)
 "if"         {return IF;}
 "else"       {return ELSE;}
 "while"      {return WHILE;}
+"continue"	 {return CONTINUE;}
+"break"		 {return BREAK;}
 
 {id}        {strcpy(yylval.type_id, yytext); return ID;}
 ";"			{return SEMI;}

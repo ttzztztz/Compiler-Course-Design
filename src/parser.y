@@ -27,7 +27,7 @@ int yylex();
 %token <type_float> FLOAT
 
 %token DPLUS LP RP LC RC SEMI COMMA
-%token PLUS MINUS STAR DIV MOD ASSIGNOP AND OR NOT IF ELSE WHILE RETURN FOR SWITCH CASE COLON DEFAULT
+%token PLUS MINUS STAR DIV MOD ASSIGNOP AND OR NOT IF ELSE WHILE RETURN FOR SWITCH CASE COLON DEFAULT CONTINUE BREAK
 %token EXT_DEF_LIST EXT_VAR_DEF FUNC_DEF FUNC_DEC EXT_DEC_LIST PARAM_LIST PARAM_DEC VAR_DEF DEC_LIST DEF_LIST COMP_STM STM_LIST EXP_STMT IF_THEN IF_THEN_ELSE
 %token FUNC_CALL ARGS FUNCTION PARAM ARG CALL LABEL GOTO JLT JLE JGT JGE EQ NEQ
 
@@ -84,6 +84,8 @@ Stmt:   Exp SEMI    {$$=make_node(EXP_STMT,yylineno,{$1});}
       | IF LP Exp RP Stmt %prec LOWER_THEN_ELSE   {$$=make_node(IF_THEN,yylineno,{$3,$5});}
       | IF LP Exp RP Stmt ELSE Stmt   {$$=make_node(IF_THEN_ELSE,yylineno,{$3,$5,$7});}
       | WHILE LP Exp RP Stmt {$$=make_node(WHILE,yylineno,{$3,$5});}
+      | CONTINUE SEMI {$$=make_node(CONTINUE,yylineno);}
+      | BREAK SEMI {$$=make_node(BREAK,yylineno);}
       ;
 DefList: {$$=NULL; }
         | Def DefList {$$=make_node(DEF_LIST,yylineno,{$1,$2});}

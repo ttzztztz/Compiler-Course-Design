@@ -29,8 +29,8 @@
 using namespace llvm;
 using std::string, std::unordered_map, std::vector, std::variant, std::get, std::tuple, std::optional, std::nullopt;
 
-#define PRINT_AST 1
-#define PRINT_SYMBOL_TABLE 1
+#define PRINT_AST 0
+#define PRINT_SYMBOL_TABLE 0
 
 class Operation
 {

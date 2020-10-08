@@ -4,11 +4,11 @@ int add(int a, int b) {
 
 int main() {
     int a = 12;
-    int tmp = add(3, 5);
 
     while (a > 0) {
         if (add(a, 1) % 2 == 1) {
             print_int(a);
+            break;
         }
         a = a - 1;
     }
