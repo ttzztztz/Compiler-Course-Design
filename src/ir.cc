@@ -2,8 +2,9 @@
 #include "iostream"
 #include "memory"
 #include "list"
+#include "unordered_set"
 
-using std::pair, std::tuple, std::list, std::make_unique;
+using std::pair, std::tuple, std::list, std::make_unique, std::unordered_set;
 
 extern vector<Symbol> symbol_table;
 
@@ -35,6 +36,7 @@ void print_llvm_ir(CodeNode *head)
     unordered_map<string, pair<Function *, FunctionType *>> function_table;
     unordered_map<string, Value *> val_table;
     unordered_map<string, BasicBlock *> label_table;
+    unordered_set<BasicBlock*> finished_block;
 
     typedef pair<Instruction *, IRBuilderBase::InsertPoint> DeferredGotoStatementType;
     typedef tuple<Instruction *, IRBuilderBase::InsertPoint, Value *, string, string> DeferredBrStatementType;
@@ -46,6 +48,22 @@ void print_llvm_ir(CodeNode *head)
     auto [printf_func, printf_func_type, print_int_func, print_int_func_type] = inject_print_function(TheContext, builder_stack.back(), TheModule);
     function_table["printf"] = {printf_func, printf_func_type};
     function_table["print_int"] = {print_int_func, print_int_func_type};
+
+    auto create_goto = [&](const string &label) -> void {
+        auto* current_basic_block = block_stack.back();
+        if (finished_block.count(current_basic_block)) return;
+        finished_block.insert(current_basic_block);
+
+        if (label_table.count(label))
+        {
+            builder_stack.back().CreateBr(label_table[label]);
+        }
+        else
+        {
+            Instruction *fake_node = builder_stack.back().CreateRetVoid();
+            deferred_goto_statement[label].emplace_back(fake_node, builder_stack.back().saveIP());
+        }
+    };
 
     CodeNode *h = head;
     do
@@ -106,7 +124,6 @@ void print_llvm_ir(CodeNode *head)
             val_table[get<string>(h->result.data)] = res;
             break;
         }
-
         case RETURN:
         {
             if (h->result.kind)
@@ -123,6 +140,13 @@ void print_llvm_ir(CodeNode *head)
                 builder_stack.back().CreateRetVoid();
             }
 
+            break;
+        }
+        case CONTINUE:
+        case BREAK:
+        {
+            const string &label = get<string>(h->result.data);
+            create_goto(label);
             break;
         }
         case FUNCTION:
@@ -185,10 +209,7 @@ void print_llvm_ir(CodeNode *head)
             {
                 for (auto [val, insert_point] : deferred_goto_statement[label])
                 {
-                    IRBuilder<> builder(TheContext);
-                    builder.SetInsertPoint(insert_point.getBlock(), insert_point.getPoint());
-                    builder.CreateBr(next_block);
-
+                    BranchInst::Create(next_block, val);
                     val->eraseFromParent();
                 }
             }
@@ -199,7 +220,7 @@ void print_llvm_ir(CodeNode *head)
                 if (label_table.count(true_label) && label_table.count(false_label))
                 {
                     IRBuilder<> builder(TheContext);
-                    builder.SetInsertPoint(insert_point.getBlock(), insert_point.getPoint());
+                    builder.restoreIP(insert_point);
                     builder.CreateCondBr(icmp_val, label_table[true_label], label_table[false_label]);
                     val->eraseFromParent();
 
@@ -220,16 +241,7 @@ void print_llvm_ir(CodeNode *head)
         case GOTO:
         {
             const string &label = get<string>(h->result.data);
-            if (label_table.count(label))
-            {
-                builder_stack.back().CreateBr(label_table[label]);
-            }
-            else
-            {
-                Instruction *fake_node = builder_stack.back().CreateRetVoid();
-                auto insert_point = builder_stack.back().saveIP();
-                deferred_goto_statement[label].emplace_back(fake_node, insert_point);
-            }
+            create_goto(label);
             break;
         }
 

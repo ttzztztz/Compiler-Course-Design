@@ -456,12 +456,41 @@ void expression(ASTNode *T)
     }
 }
 
+vector<ASTNode *> semantic_stack;
+optional<ASTNode *> find_last_loop_statement()
+{
+    for (int i = semantic_stack.size() - 1; i >= 0; i--)
+    {
+        if (semantic_stack[i]->kind == WHILE)
+            return semantic_stack[i];
+    }
+    return nullopt;
+}
+
 void semantic_analysis(ASTNode *T, const string &function_name = "")
 {
     if (T)
     {
+        semantic_stack.push_back(T);
         switch (T->kind)
         {
+        case CONTINUE:
+        case BREAK:
+        {
+            auto last_loop_statement = find_last_loop_statement();
+            if (last_loop_statement == nullopt)
+            {
+                throw_semantic_error(T->pos, "Break or continue statement invalid");
+                break;
+            }
+            Operation opn1, opn2, result;
+            result.kind = ID;
+            result.data = last_loop_statement.value()->Snext;
+
+            T->Snext = last_loop_statement.value()->Snext;
+            T->code = generate_code_node(T->kind, opn1, opn2, result);
+            break;
+        }
         case RETURN:
         {
             Operation opn1, opn2, result;
@@ -741,11 +770,14 @@ void semantic_analysis(ASTNode *T, const string &function_name = "")
             expression(T);
             break;
         }
+        semantic_stack.pop_back();
     }
 }
 
 void entrypoint(ASTNode *T)
 {
+    semantic_stack.clear();
+
     fill_symbol_table("print_int", "", 0, INT, 'F');
     symbol_table[0].paramnum = 1;
     fill_symbol_table("0", "", 1, INT, 'P');
