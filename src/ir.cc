@@ -64,15 +64,15 @@ void print_llvm_ir(CodeNode *head)
         }
     };
 
-    CodeNode *h = head;
+    CodeNode *cur = head;
     do
     {
-        Value *l = prepare_opn(TheContext, val_table, h->opn1), *r = prepare_opn(TheContext, val_table, h->opn2);
-        switch (h->op)
+        Value *l = prepare_opn(TheContext, val_table, cur->opn1), *r = prepare_opn(TheContext, val_table, cur->opn2);
+        switch (cur->op)
         {
         case ASSIGNOP:
         {
-            string var_name(get<string>(h->result.data));
+            string var_name(get<string>(cur->result.data));
 
             Value *alloc = nullptr;
             if (val_table.count(var_name))
@@ -109,25 +109,25 @@ void print_llvm_ir(CodeNode *head)
             }
             Value *res = nullptr;
 
-            if (h->op == PLUS)
-                res = builder_stack.back().CreateAdd(l, r, get<string>(h->result.data));
-            else if (h->op == MINUS)
-                res = builder_stack.back().CreateSub(l, r, get<string>(h->result.data));
-            else if (h->op == STAR)
-                res = builder_stack.back().CreateMul(l, r, get<string>(h->result.data));
-            else if (h->op == DIV)
-                res = builder_stack.back().CreateSDiv(l, r, get<string>(h->result.data));
-            else if (h->op == MOD)
-                res = builder_stack.back().CreateSRem(l, r, get<string>(h->result.data));
+            if (cur->op == PLUS)
+                res = builder_stack.back().CreateAdd(l, r, get<string>(cur->result.data));
+            else if (cur->op == MINUS)
+                res = builder_stack.back().CreateSub(l, r, get<string>(cur->result.data));
+            else if (cur->op == STAR)
+                res = builder_stack.back().CreateMul(l, r, get<string>(cur->result.data));
+            else if (cur->op == DIV)
+                res = builder_stack.back().CreateSDiv(l, r, get<string>(cur->result.data));
+            else if (cur->op == MOD)
+                res = builder_stack.back().CreateSRem(l, r, get<string>(cur->result.data));
 
-            val_table[get<string>(h->result.data)] = res;
+            val_table[get<string>(cur->result.data)] = res;
             break;
         }
         case RETURN:
         {
-            if (h->result.kind)
+            if (cur->result.kind)
             {
-                Value *return_val = val_table[get<string>(h->result.data)];
+                Value *return_val = val_table[get<string>(cur->result.data)];
                 if (return_val->getType()->isPointerTy())
                 {
                     return_val = builder_stack.back().CreateLoad(Type::getInt32Ty(TheContext), return_val, "");
@@ -144,13 +144,13 @@ void print_llvm_ir(CodeNode *head)
         case CONTINUE:
         case BREAK:
         {
-            const string &label = get<string>(h->result.data);
+            const string &label = get<string>(cur->result.data);
             create_goto(label);
             break;
         }
         case FUNCTION:
         {
-            const string &function_name = get<string>(h->result.data);
+            const string &function_name = get<string>(cur->result.data);
             const auto fill_result = search_symbol_table_with_flag(function_name, 'F');
 
             vector<Type *> parameters;
@@ -186,21 +186,21 @@ void print_llvm_ir(CodeNode *head)
         }
         case CALL:
         {
-            auto [fn, fn_type] = function_table[get<string>(h->opn1.data)];
+            auto [fn, fn_type] = function_table[get<string>(cur->opn1.data)];
             vector<Value *> parameters;
-            for (auto arg : h->data)
+            for (auto arg : cur->data)
             {
                 auto *load = builder_stack.back().CreateLoad(Type::getInt32Ty(TheContext), val_table[get<string>(arg->result.data)], "");
                 parameters.push_back(load);
             }
 
-            val_table[get<string>(h->result.data)] = builder_stack.back().CreateCall(fn_type, fn, parameters, get<string>(h->result.data));
+            val_table[get<string>(cur->result.data)] = builder_stack.back().CreateCall(fn_type, fn, parameters, get<string>(cur->result.data));
             break;
         }
 
         case LABEL:
         {
-            const string &label = get<string>(h->result.data);
+            const string &label = get<string>(cur->result.data);
             BasicBlock *next_block = BasicBlock::Create(TheContext, label, function_stack.back());
             label_table[label] = next_block;
 
@@ -238,7 +238,7 @@ void print_llvm_ir(CodeNode *head)
 
         case GOTO:
         {
-            const string &label = get<string>(h->result.data);
+            const string &label = get<string>(cur->result.data);
             create_goto(label);
             break;
         }
@@ -258,20 +258,20 @@ void print_llvm_ir(CodeNode *head)
             if (r && r->getType()->isPointerTy())
                 r = builder_stack.back().CreateLoad(Type::getInt32Ty(TheContext), r, "");
 
-            if (h->op == EQ)
+            if (cur->op == EQ)
                 val = builder_stack.back().CreateICmpEQ(l, r, "cmpres");
-            else if (h->op == NEQ)
+            else if (cur->op == NEQ)
                 val = builder_stack.back().CreateICmpNE(l, r, "cmpres");
-            else if (h->op == JGE)
+            else if (cur->op == JGE)
                 val = builder_stack.back().CreateICmpSGE(l, r, "cmpres");
-            else if (h->op == JGT)
+            else if (cur->op == JGT)
                 val = builder_stack.back().CreateICmpSGT(l, r, "cmpres");
-            else if (h->op == JLE)
+            else if (cur->op == JLE)
                 val = builder_stack.back().CreateICmpSLE(l, r, "cmpres");
-            else if (h->op == JLT)
+            else if (cur->op == JLT)
                 val = builder_stack.back().CreateICmpSLT(l, r, "cmpres");
 
-            const string &true_label = get<string>(h->result.data), &false_label = get<string>(h->data[0]->result.data);
+            const string &true_label = get<string>(cur->result.data), &false_label = get<string>(cur->data[0]->result.data);
             if (label_table.count(true_label) && label_table.count(false_label))
             {
                 builder_stack.back().CreateCondBr(val, label_table[true_label], label_table[false_label]);
@@ -284,8 +284,8 @@ void print_llvm_ir(CodeNode *head)
         }
         }
 
-        h = h->next;
-    } while (h != head);
+        cur = cur->next;
+    } while (cur != head);
 
     TheModule.print(errs(), nullptr);
     verifyModule(TheModule, &(errs()));
