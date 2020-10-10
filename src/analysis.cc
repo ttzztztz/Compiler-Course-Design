@@ -352,8 +352,6 @@ void expression(ASTNode *node)
             }
             break;
         }
-        case AND:   // todo
-        case OR:    // todo
         case RELOP: // todo
             node->type = INT;
             expression(node->ptr[0]);
