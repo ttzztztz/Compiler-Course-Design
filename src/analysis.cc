@@ -620,7 +620,7 @@ void semantic_analysis(ASTNode *node, const string &function_name = "")
 
                 if (ptr->ptr[0]->kind == ID)
                 {
-                    auto fill_result = fill_symbol_table(get<string>(ptr->ptr[0]->data), new_alias(), level, ptr->ptr[0]->type, 'V'); // todo: offset count
+                    auto fill_result = fill_symbol_table(get<string>(ptr->ptr[0]->data), new_alias(), level, ptr->ptr[0]->type, 'V');
                     if (fill_result == nullopt)
                     {
                         throw_semantic_error(ptr->ptr[0]->pos, get<string>(ptr->ptr[0]->data), "Variable re-declared.");
@@ -632,7 +632,7 @@ void semantic_analysis(ASTNode *node, const string &function_name = "")
                 }
                 else if (ptr->ptr[0]->kind == ASSIGNOP)
                 {
-                    auto fill_result = fill_symbol_table(get<string>(ptr->ptr[0]->ptr[0]->data), new_alias(), level, ptr->ptr[0]->type, 'V'); // todo: offset count
+                    auto fill_result = fill_symbol_table(get<string>(ptr->ptr[0]->ptr[0]->data), new_alias(), level, ptr->ptr[0]->type, 'V');
                     if (fill_result == nullopt)
                         throw_semantic_error(ptr->ptr[0]->ptr[0]->pos, get<string>(ptr->ptr[0]->ptr[0]->data), "Variable re-declared.");
                     else

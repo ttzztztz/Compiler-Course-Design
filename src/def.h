@@ -85,9 +85,9 @@ public:
 };
 
 ASTNode *make_node(int kind, int pos, vector<ASTNode*> nodes = vector<ASTNode*>{});
-void entrypoint(ASTNode *T);
-void bool_expression(ASTNode *T);
-void expression(ASTNode *T);
+void entrypoint(ASTNode *node);
+void bool_expression(ASTNode *node);
+void expression(ASTNode *node);
 void print_llvm_ir(CodeNode *head);
 optional<Symbol> search_symbol_table_with_flag(const string& name, char flag);
 tuple<Function*, FunctionType*, Function*, FunctionType*> inject_print_function(LLVMContext &ctx, IRBuilder<> &builder, Module &module);
