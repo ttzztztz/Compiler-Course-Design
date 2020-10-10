@@ -60,7 +60,7 @@ void print_llvm_ir(CodeNode *head)
         else
         {
             Instruction *fake_node = builder_stack.back().CreateRetVoid();
-            deferred_goto_statement[label].emplace_back(fake_node, builder_stack.back().saveIP());
+            deferred_goto_statement[label].emplace_back(fake_node);
         }
     };
 
@@ -219,7 +219,7 @@ void print_llvm_ir(CodeNode *head)
                 auto [val, icmp_val, true_label, false_label] = *it;
                 if (label_table.count(true_label) && label_table.count(false_label))
                 {
-                    BranchInst::Create(label_table[true_label], label_table[false_label], next_block, val);
+                    BranchInst::Create(label_table[true_label], label_table[false_label], icmp_val, val);
                     val->eraseFromParent();
 
                     it = deferred_br_statement.erase(it);
@@ -250,7 +250,7 @@ void print_llvm_ir(CodeNode *head)
         case NEQ:
         case EQ:
         {
-            Value *val;
+            Value *val = nullptr;
 
             // type inconsistency
             if (l && l->getType()->isPointerTy())
@@ -279,8 +279,7 @@ void print_llvm_ir(CodeNode *head)
             else
             {
                 Instruction *fake_node = builder_stack.back().CreateRetVoid();
-                auto insert_point = builder_stack.back().saveIP();
-                deferred_br_statement.emplace_back(fake_node, insert_point, val, true_label, false_label);
+                deferred_br_statement.emplace_back(fake_node, val, true_label, false_label);
             }
         }
         }

@@ -147,57 +147,57 @@ int fill_temp_var(const string &name, int level, int type, char flag)
 
 int level = 0;
 
-void ext_var_list(ASTNode *T)
+void ext_var_list(ASTNode *node)
 {
-    switch (T->kind)
+    switch (node->kind)
     {
     case EXT_DEC_LIST:
-        T->ptr[0]->type = T->type;
-        T->ptr[1]->type = T->type;
-        ext_var_list(T->ptr[0]);
-        ext_var_list(T->ptr[1]);
-        T->num = T->ptr[1]->num + 1;
+        node->ptr[0]->type = node->type;
+        node->ptr[1]->type = node->type;
+        ext_var_list(node->ptr[0]);
+        ext_var_list(node->ptr[1]);
+        node->num = node->ptr[1]->num + 1;
         break;
     case ID:
     {
-        auto fill_result = fill_symbol_table(get<string>(T->data), new_alias(), level, T->type, 'V');
+        auto fill_result = fill_symbol_table(get<string>(node->data), new_alias(), level, node->type, 'V');
         if (fill_result == nullopt)
-            throw_semantic_error(T->pos, get<string>(T->data), "Redecl Variable");
+            throw_semantic_error(node->pos, get<string>(node->data), "Redecl Variable");
         else
-            T->idx = fill_result.value();
-        T->num = 1;
+            node->idx = fill_result.value();
+        node->num = 1;
         break;
     }
     }
 }
 
-bool match_param(const Symbol &symbol, ASTNode *T)
+bool match_param(const Symbol &symbol, ASTNode *node)
 {
     int num = symbol.paramnum;
-    const int pos = T->pos;
-    T = T->ptr[0];
-    if (num == 0 && T == nullptr)
+    const int pos = node->pos;
+    node = node->ptr[0];
+    if (num == 0 && node == nullptr)
     {
         return true;
     }
 
     for (int j = 1; j <= num; j++)
     {
-        if (!T)
+        if (!node)
         {
             throw_semantic_error(pos, "", "Too few parameters to call function!");
             return false;
         }
         int type1 = symbol_table[symbol.idx + j].type;
-        int type2 = T->ptr[0]->type;
+        int type2 = node->ptr[0]->type;
         if (type1 != type2)
         {
             throw_semantic_error(pos, "", "Function Type doesn't match.");
             return false;
         }
-        T = T->ptr[1];
+        node = node->ptr[1];
     }
-    if (T)
+    if (node)
     {
         throw_semantic_error(pos, "", "Too much parameters to call function.");
         return false;
@@ -205,11 +205,11 @@ bool match_param(const Symbol &symbol, ASTNode *T)
     return true;
 }
 
-void bool_expression(ASTNode *T)
+void bool_expression(ASTNode *node)
 {
-    if (T)
+    if (node)
     {
-        switch (T->kind)
+        switch (node->kind)
         {
         case INT:
         case ID:
@@ -219,145 +219,145 @@ void bool_expression(ASTNode *T)
         {
             Operation opn1, opn2, result;
             int op = 0;
-            expression(T->ptr[0]);
-            expression(T->ptr[1]);
+            expression(node->ptr[0]);
+            expression(node->ptr[1]);
             opn1.kind = ID;
-            opn1.data = symbol_table[T->ptr[0]->idx].alias;
+            opn1.data = symbol_table[node->ptr[0]->idx].alias;
             opn2.kind = ID;
-            opn2.data = symbol_table[T->ptr[1]->idx].alias;
+            opn2.data = symbol_table[node->ptr[1]->idx].alias;
             result.kind = ID;
-            result.data = T->Etrue;
-            if (get<string>(T->data) == "<")
+            result.data = node->Etrue;
+            if (get<string>(node->data) == "<")
                 op = JLT;
-            else if (get<string>(T->data) == "<=")
+            else if (get<string>(node->data) == "<=")
                 op = JLE;
-            else if (get<string>(T->data) == ">")
+            else if (get<string>(node->data) == ">")
                 op = JGT;
-            else if (get<string>(T->data) == ">=")
+            else if (get<string>(node->data) == ">=")
                 op = JGE;
-            else if (get<string>(T->data) == "==")
+            else if (get<string>(node->data) == "==")
                 op = EQ;
-            else if (get<string>(T->data) == "!=")
+            else if (get<string>(node->data) == "!=")
                 op = NEQ;
-            T->code = generate_code_node(op, opn1, opn2, result);
-            T->code->data.push_back(generate_goto(T->Efalse));
-            T->code = merge_code_node({T->ptr[0]->code,
-                                       T->ptr[1]->code,
-                                       T->code});
+            node->code = generate_code_node(op, opn1, opn2, result);
+            node->code->data.push_back(generate_goto(node->Efalse));
+            node->code = merge_code_node({node->ptr[0]->code,
+                                       node->ptr[1]->code,
+                                       node->code});
             break;
         }
         case AND:
         case OR:
-            if (T->kind == AND)
+            if (node->kind == AND)
             {
-                T->ptr[0]->Etrue = new_label();
-                T->ptr[0]->Efalse = T->Efalse;
+                node->ptr[0]->Etrue = new_label();
+                node->ptr[0]->Efalse = node->Efalse;
             }
             else
             {
-                T->ptr[0]->Etrue = T->Etrue;
-                T->ptr[0]->Efalse = new_label();
+                node->ptr[0]->Etrue = node->Etrue;
+                node->ptr[0]->Efalse = new_label();
             }
-            T->ptr[1]->Etrue = T->Etrue;
-            T->ptr[1]->Efalse = T->Efalse;
-            bool_expression(T->ptr[0]);
-            bool_expression(T->ptr[1]);
-            if (T->kind == AND)
+            node->ptr[1]->Etrue = node->Etrue;
+            node->ptr[1]->Efalse = node->Efalse;
+            bool_expression(node->ptr[0]);
+            bool_expression(node->ptr[1]);
+            if (node->kind == AND)
             {
-                T->code = merge_code_node({T->ptr[0]->code,
-                                           generate_label(T->ptr[0]->Etrue),
-                                           T->ptr[1]->code});
+                node->code = merge_code_node({node->ptr[0]->code,
+                                           generate_label(node->ptr[0]->Etrue),
+                                           node->ptr[1]->code});
             }
             else
             {
-                T->code = merge_code_node({T->ptr[0]->code,
-                                           generate_label(T->ptr[0]->Efalse),
-                                           T->ptr[1]->code});
+                node->code = merge_code_node({node->ptr[0]->code,
+                                           generate_label(node->ptr[0]->Efalse),
+                                           node->ptr[1]->code});
             }
             break;
         case NOT:
-            T->ptr[0]->Etrue = T->Efalse;
-            T->ptr[0]->Efalse = T->Etrue;
-            bool_expression(T->ptr[0]);
-            T->code = T->ptr[0]->code;
+            node->ptr[0]->Etrue = node->Efalse;
+            node->ptr[0]->Efalse = node->Etrue;
+            bool_expression(node->ptr[0]);
+            node->code = node->ptr[0]->code;
             break;
         }
     }
 }
 
-void expression(ASTNode *T)
+void expression(ASTNode *node)
 {
-    if (T)
+    if (node)
     {
-        switch (T->kind)
+        switch (node->kind)
         {
         case INT:
         {
             Operation opn1, opn2, result;
-            T->idx = fill_temp_var(new_temp(), level, T->type, 'T');
-            T->type = INT;
+            node->idx = fill_temp_var(new_temp(), level, node->type, 'T');
+            node->type = INT;
             opn1.kind = INT;
-            opn1.data = get<int>(T->data);
+            opn1.data = get<int>(node->data);
             result.kind = ID;
-            result.data = symbol_table[T->idx].alias;
-            T->code = generate_code_node(ASSIGNOP, opn1, opn2, result);
+            result.data = symbol_table[node->idx].alias;
+            node->code = generate_code_node(ASSIGNOP, opn1, opn2, result);
             break;
         }
         case ID:
         {
-            auto fill_result = search_symbol_table(get<string>(T->data));
+            auto fill_result = search_symbol_table(get<string>(node->data));
             if (fill_result == nullopt)
-                throw_semantic_error(T->pos, get<string>(T->data), "Variable not declared.");
+                throw_semantic_error(node->pos, get<string>(node->data), "Variable not declared.");
             if (fill_result.value().flag == 'F')
-                throw_semantic_error(T->pos, get<string>(T->data), "Type doesn't match.");
+                throw_semantic_error(node->pos, get<string>(node->data), "Type doesn't match.");
             else
             {
-                T->idx = fill_result.value().idx;
-                T->code = nullptr;
-                T->type = fill_result.value().type;
+                node->idx = fill_result.value().idx;
+                node->code = nullptr;
+                node->type = fill_result.value().type;
             }
             break;
         }
         case FLOAT:
         {
             Operation opn1, opn2, result;
-            T->idx = fill_temp_var(new_temp(), level, T->type, 'T');
-            T->type = FLOAT;
+            node->idx = fill_temp_var(new_temp(), level, node->type, 'T');
+            node->type = FLOAT;
             opn1.kind = FLOAT;
-            opn1.data = get<float>(T->data);
+            opn1.data = get<float>(node->data);
             result.kind = ID;
-            result.data = symbol_table[T->idx].alias;
-            T->code = generate_code_node(ASSIGNOP, opn1, opn2, result);
+            result.data = symbol_table[node->idx].alias;
+            node->code = generate_code_node(ASSIGNOP, opn1, opn2, result);
             break;
         }
         case ASSIGNOP:
         {
             Operation opn1, opn2, result;
 
-            if (T->ptr[0]->kind != ID)
+            if (node->ptr[0]->kind != ID)
             {
-                throw_semantic_error(T->pos, "", "Assign Expression needs to be left value.");
+                throw_semantic_error(node->pos, "", "Assign Expression needs to be left value.");
             }
             else
             {
-                expression(T->ptr[0]);
-                expression(T->ptr[1]);
-                T->type = T->ptr[0]->type;
-                T->code = merge_code_node({T->ptr[0]->code, T->ptr[1]->code});
+                expression(node->ptr[0]);
+                expression(node->ptr[1]);
+                node->type = node->ptr[0]->type;
+                node->code = merge_code_node({node->ptr[0]->code, node->ptr[1]->code});
                 opn1.kind = ID;
-                opn1.data = symbol_table[T->ptr[1]->idx].alias;
+                opn1.data = symbol_table[node->ptr[1]->idx].alias;
                 result.kind = ID;
-                result.data = symbol_table[T->ptr[0]->idx].alias;
-                T->code = merge_code_node({T->code, generate_code_node(ASSIGNOP, opn1, opn2, result)});
+                result.data = symbol_table[node->ptr[0]->idx].alias;
+                node->code = merge_code_node({node->code, generate_code_node(ASSIGNOP, opn1, opn2, result)});
             }
             break;
         }
         case AND:   // todo
         case OR:    // todo
         case RELOP: // todo
-            T->type = INT;
-            expression(T->ptr[0]);
-            expression(T->ptr[1]);
+            node->type = INT;
+            expression(node->ptr[0]);
+            expression(node->ptr[1]);
             break;
         case PLUS:
         case MINUS:
@@ -367,26 +367,26 @@ void expression(ASTNode *T)
         {
             Operation opn1, opn2, result;
 
-            expression(T->ptr[0]);
-            expression(T->ptr[1]);
+            expression(node->ptr[0]);
+            expression(node->ptr[1]);
             // todo: err handle
-            if (T->ptr[0]->type == FLOAT || T->ptr[1]->type == FLOAT)
-                T->type = FLOAT;
+            if (node->ptr[0]->type == FLOAT || node->ptr[1]->type == FLOAT)
+                node->type = FLOAT;
             else
-                T->type = INT;
-            T->idx = fill_temp_var(new_temp(), level, T->type, 'T');
+                node->type = INT;
+            node->idx = fill_temp_var(new_temp(), level, node->type, 'T');
             opn1.kind = ID;
-            opn1.data = symbol_table[T->ptr[0]->idx].alias;
-            opn1.type = T->ptr[0]->type;
+            opn1.data = symbol_table[node->ptr[0]->idx].alias;
+            opn1.type = node->ptr[0]->type;
             opn2.kind = ID;
-            opn2.data = symbol_table[T->ptr[1]->idx].alias;
-            opn2.type = T->ptr[1]->type;
+            opn2.data = symbol_table[node->ptr[1]->idx].alias;
+            opn2.type = node->ptr[1]->type;
             result.kind = ID;
-            result.data = symbol_table[T->idx].alias;
-            result.type = T->type;
-            T->code = merge_code_node({T->ptr[0]->code,
-                                       T->ptr[1]->code,
-                                       generate_code_node(T->kind, opn1, opn2, result)});
+            result.data = symbol_table[node->idx].alias;
+            result.type = node->type;
+            node->code = merge_code_node({node->ptr[0]->code,
+                                       node->ptr[1]->code,
+                                       generate_code_node(node->kind, opn1, opn2, result)});
             break;
         }
         case NOT: // todo
@@ -398,58 +398,58 @@ void expression(ASTNode *T)
             vector<CodeNode *> call_args;
             Operation opn1, opn2, result;
 
-            auto fill_result = search_symbol_table(get<string>(T->data));
+            auto fill_result = search_symbol_table(get<string>(node->data));
             if (fill_result == nullopt)
             {
-                throw_semantic_error(T->pos, get<string>(T->data), "Function not declared.");
+                throw_semantic_error(node->pos, get<string>(node->data), "Function not declared.");
                 break;
             }
             if (fill_result.value().flag != 'F')
             {
-                throw_semantic_error(T->pos, get<string>(T->data), "Not a function!");
+                throw_semantic_error(node->pos, get<string>(node->data), "Not a function!");
                 break;
             }
-            T->type = fill_result.value().type;
-            const int width = T->type == INT ? 4 : 8;
-            if (T->ptr[0])
+            node->type = fill_result.value().type;
+            const int width = node->type == INT ? 4 : 8;
+            if (node->ptr[0])
             {
-                expression(T->ptr[0]);
-                T->code = T->ptr[0]->code;
+                expression(node->ptr[0]);
+                node->code = node->ptr[0]->code;
             }
             else
             {
-                T->code = nullptr;
+                node->code = nullptr;
             }
-            match_param(fill_result.value(), T);
-            ASTNode *T0 = T->ptr[0];
-            while (T0)
+            match_param(fill_result.value(), node);
+            ASTNode *ptr = node->ptr[0];
+            while (ptr)
             {
                 result.kind = ID;
-                result.data = symbol_table[T0->ptr[0]->idx].alias;
+                result.data = symbol_table[ptr->ptr[0]->idx].alias;
                 call_args.push_back(generate_code_node(ARG, opn1, opn2, result));
-                T0 = T0->ptr[1];
+                ptr = ptr->ptr[1];
             }
-            T->idx = fill_temp_var(new_temp(), level, T->type, 'T');
+            node->idx = fill_temp_var(new_temp(), level, node->type, 'T');
             opn1.kind = ID;
-            opn1.data = T->data;
+            opn1.data = node->data;
             result.kind = ID;
-            result.data = symbol_table[T->idx].alias;
+            result.data = symbol_table[node->idx].alias;
 
             auto *call_code_node = generate_code_node(CALL, opn1, opn2, result);
             call_code_node->data = call_args;
 
-            T->code = merge_code_node({T->code,
+            node->code = merge_code_node({node->code,
                                        call_code_node});
             break;
         }
         case ARGS:
-            expression(T->ptr[0]);
-            T->code = T->ptr[0]->code;
-            if (T->ptr[1])
+            expression(node->ptr[0]);
+            node->code = node->ptr[0]->code;
+            if (node->ptr[1])
             {
-                expression(T->ptr[1]);
-                T->code = merge_code_node({T->code,
-                                           T->ptr[1]->code});
+                expression(node->ptr[1]);
+                node->code = merge_code_node({node->code,
+                                           node->ptr[1]->code});
             }
             break;
         }
@@ -467,12 +467,12 @@ optional<ASTNode *> find_last_loop_statement()
     return nullopt;
 }
 
-void semantic_analysis(ASTNode *T, const string &function_name = "")
+void semantic_analysis(ASTNode *node, const string &function_name = "")
 {
-    if (T)
+    if (node)
     {
-        semantic_stack.push_back(T);
-        switch (T->kind)
+        semantic_stack.push_back(node);
+        switch (node->kind)
         {
         case CONTINUE:
         case BREAK:
@@ -480,27 +480,27 @@ void semantic_analysis(ASTNode *T, const string &function_name = "")
             auto last_loop_statement = find_last_loop_statement();
             if (last_loop_statement == nullopt)
             {
-                throw_semantic_error(T->pos, "Break or continue statement invalid");
+                throw_semantic_error(node->pos, "Break or continue statement invalid");
                 break;
             }
             Operation opn1, opn2, result;
             result.kind = ID;
             result.data = last_loop_statement.value()->Snext;
 
-            T->Snext = last_loop_statement.value()->Snext;
-            T->code = generate_code_node(T->kind, opn1, opn2, result);
+            node->Snext = last_loop_statement.value()->Snext;
+            node->code = generate_code_node(node->kind, opn1, opn2, result);
             break;
         }
         case RETURN:
         {
             Operation opn1, opn2, result;
-            if (T->ptr[0])
+            if (node->ptr[0])
             {
-                expression(T->ptr[0]);
+                expression(node->ptr[0]);
 
                 result.kind = ID;
-                result.data = symbol_table[T->ptr[0]->idx].alias;
-                T->code = merge_code_node({T->ptr[0]->code, generate_code_node(RETURN, opn1, opn2, result)});
+                result.data = symbol_table[node->ptr[0]->idx].alias;
+                node->code = merge_code_node({node->ptr[0]->code, generate_code_node(RETURN, opn1, opn2, result)});
 
                 auto function_symbol = search_symbol_table_with_flag(function_name, 'F');
                 auto return_var_name = get<string>(result.data);
@@ -508,61 +508,62 @@ void semantic_analysis(ASTNode *T, const string &function_name = "")
                 const int return_type = function_symbol.value().type;
                 if (return_var_symbol.value().type != return_type)
                 {
-                    throw_semantic_error(T->ptr[0]->pos, "Return type doesn't match.");
+                    throw_semantic_error(node->ptr[0]->pos, "Return type doesn't match.");
                 }
             }
             else
             {
                 result.kind = 0;
-                T->code = generate_code_node(RETURN, opn1, opn2, result);
+                node->code = generate_code_node(RETURN, opn1, opn2, result);
             }
             break;
         }
         case EXT_DEF_LIST:
-            if (!T->ptr[0])
+            if (!node->ptr[0]) {
                 break;
-            semantic_analysis(T->ptr[0], function_name);
-            T->code = T->ptr[0]->code;
-            if (T->ptr[1])
+            }
+            semantic_analysis(node->ptr[0], function_name);
+            node->code = node->ptr[0]->code;
+            if (node->ptr[1])
             {
-                semantic_analysis(T->ptr[1], function_name);
-                T->code = merge_code_node({T->code,
-                                           T->ptr[1]->code});
+                semantic_analysis(node->ptr[1], function_name);
+                node->code = merge_code_node({node->code,
+                                           node->ptr[1]->code});
             }
             break;
         case EXT_VAR_DEF:
-            T->type = T->ptr[1]->type = get<string>(T->ptr[0]->data) == "int" ? INT : FLOAT;
-            ext_var_list(T->ptr[1]);
-            T->code = nullptr;
+            node->type = node->ptr[1]->type = get<string>(node->ptr[0]->data) == "int" ? INT : FLOAT;
+            ext_var_list(node->ptr[1]);
+            node->code = nullptr;
             break;
         case FUNC_DEF:
-            T->ptr[1]->type = get<string>(T->ptr[0]->data) == "int" ? INT : FLOAT;
-            semantic_analysis(T->ptr[1], get<string>(T->ptr[1]->data));
+            node->ptr[1]->type = get<string>(node->ptr[0]->data) == "int" ? INT : FLOAT;
+            semantic_analysis(node->ptr[1], get<string>(node->ptr[1]->data));
             // T->ptr[2]->Snext = new_label();
-            semantic_analysis(T->ptr[2], get<string>(T->ptr[1]->data));
-            T->code = merge_code_node({T->ptr[1]->code, T->ptr[2]->code});
+            semantic_analysis(node->ptr[2], get<string>(node->ptr[1]->data));
+            node->code = merge_code_node({node->ptr[1]->code, node->ptr[2]->code});
             break;
         case FUNC_DEC:
         {
             Operation opn1, opn2, result;
-            const auto fill_result = fill_symbol_table(get<string>(T->data), new_alias(), level, T->type, 'F');
+            const auto fill_result = fill_symbol_table(get<string>(node->data), new_alias(), level, node->type, 'F');
             if (fill_result == nullopt)
             {
-                throw_semantic_error(T->pos, get<string>(T->data), "Function Redeclaration.");
+                throw_semantic_error(node->pos, get<string>(node->data), "Function Redeclaration.");
                 break;
             }
             else
             {
-                T->idx = fill_result.value();
+                node->idx = fill_result.value();
             }
             result.kind = ID;
-            result.data = T->data;
-            T->code = generate_code_node(FUNCTION, opn1, opn2, result);
-            if (T->ptr[0])
+            result.data = node->data;
+            node->code = generate_code_node(FUNCTION, opn1, opn2, result);
+            if (node->ptr[0])
             {
-                semantic_analysis(T->ptr[0], function_name);
-                symbol_table[fill_result.value()].paramnum = T->ptr[0]->num;
-                T->code = merge_code_node({T->code, T->ptr[0]->code});
+                semantic_analysis(node->ptr[0], function_name);
+                symbol_table[fill_result.value()].paramnum = node->ptr[0]->num;
+                node->code = merge_code_node({node->code, node->ptr[0]->code});
             }
             else
             {
@@ -571,32 +572,32 @@ void semantic_analysis(ASTNode *T, const string &function_name = "")
             break;
         }
         case PARAM_LIST:
-            semantic_analysis(T->ptr[0], function_name);
-            if (T->ptr[1])
+            semantic_analysis(node->ptr[0], function_name);
+            if (node->ptr[1])
             {
-                semantic_analysis(T->ptr[1], function_name);
-                T->num = T->ptr[0]->num + T->ptr[1]->num;
-                T->code = merge_code_node({T->ptr[0]->code, T->ptr[1]->code});
+                semantic_analysis(node->ptr[1], function_name);
+                node->num = node->ptr[0]->num + node->ptr[1]->num;
+                node->code = merge_code_node({node->ptr[0]->code, node->ptr[1]->code});
             }
             else
             {
-                T->num = T->ptr[0]->num;
-                T->code = T->ptr[0]->code;
+                node->num = node->ptr[0]->num;
+                node->code = node->ptr[0]->code;
             }
             break;
         case PARAM_DEC:
         {
             Operation opn1, opn2, result;
-            auto fill_result = fill_symbol_table(get<string>(T->ptr[1]->data), new_alias(), 1, T->ptr[0]->type, 'P');
+            auto fill_result = fill_symbol_table(get<string>(node->ptr[1]->data), new_alias(), 1, node->ptr[0]->type, 'P');
             if (fill_result == nullopt)
             {
-                throw_semantic_error(T->ptr[1]->pos, get<string>(T->ptr[1]->data), "Function Parameter name re-declaration.");
+                throw_semantic_error(node->ptr[1]->pos, get<string>(node->ptr[1]->data), "Function Parameter name re-declaration.");
             }
             else
             {
-                T->ptr[1]->idx = fill_result.value();
+                node->ptr[1]->idx = fill_result.value();
             }
-            T->num = 1;
+            node->num = 1;
             result.kind = ID;
             result.data = symbol_table[fill_result.value()].alias;
             // T->code = generate_code_node(PARAM, opn1, opn2, result);
@@ -605,79 +606,81 @@ void semantic_analysis(ASTNode *T, const string &function_name = "")
         case VAR_DEF:
         {
             Operation opn1, opn2, result;
-            T->code = nullptr;
-            T->ptr[1]->type = get<string>(T->ptr[0]->data) == "int" ? INT : FLOAT;
-            ASTNode *T0 = T->ptr[1];
+            node->code = nullptr;
+            node->ptr[1]->type = get<string>(node->ptr[0]->data) == "int" ? INT : FLOAT;
+            ASTNode *ptr = node->ptr[1];
             int num = 0;
-            while (T0)
+            while (ptr)
             {
                 num++;
-                T0->ptr[0]->type = T0->type;
-                if (T0->ptr[1])
-                    T0->ptr[1]->type = T0->type;
-                if (T0->ptr[0]->kind == ID)
+                ptr->ptr[0]->type = ptr->type;
+                if (ptr->ptr[1]) {
+                    ptr->ptr[1]->type = ptr->type;
+                }
+
+                if (ptr->ptr[0]->kind == ID)
                 {
-                    auto fill_result = fill_symbol_table(get<string>(T0->ptr[0]->data), new_alias(), level, T0->ptr[0]->type, 'V'); // todo: offset count
+                    auto fill_result = fill_symbol_table(get<string>(ptr->ptr[0]->data), new_alias(), level, ptr->ptr[0]->type, 'V'); // todo: offset count
                     if (fill_result == nullopt)
                     {
-                        throw_semantic_error(T0->ptr[0]->pos, get<string>(T0->ptr[0]->data), "Variable re-declared.");
+                        throw_semantic_error(ptr->ptr[0]->pos, get<string>(ptr->ptr[0]->data), "Variable re-declared.");
                     }
                     else
                     {
-                        T0->ptr[0]->idx = fill_result.value();
+                        ptr->ptr[0]->idx = fill_result.value();
                     }
                 }
-                else if (T0->ptr[0]->kind == ASSIGNOP)
+                else if (ptr->ptr[0]->kind == ASSIGNOP)
                 {
-                    auto fill_result = fill_symbol_table(get<string>(T0->ptr[0]->ptr[0]->data), new_alias(), level, T0->ptr[0]->type, 'V'); // todo: offset count
+                    auto fill_result = fill_symbol_table(get<string>(ptr->ptr[0]->ptr[0]->data), new_alias(), level, ptr->ptr[0]->type, 'V'); // todo: offset count
                     if (fill_result == nullopt)
-                        throw_semantic_error(T0->ptr[0]->ptr[0]->pos, get<string>(T0->ptr[0]->ptr[0]->data), "Variable re-declared.");
+                        throw_semantic_error(ptr->ptr[0]->ptr[0]->pos, get<string>(ptr->ptr[0]->ptr[0]->data), "Variable re-declared.");
                     else
                     {
-                        T0->ptr[0]->idx = fill_result.value();
-                        expression(T0->ptr[0]->ptr[1]);
+                        ptr->ptr[0]->idx = fill_result.value();
+                        expression(ptr->ptr[0]->ptr[1]);
                         opn1.kind = ID;
-                        opn1.data = symbol_table[T0->ptr[0]->ptr[1]->idx].alias;
+                        opn1.data = symbol_table[ptr->ptr[0]->ptr[1]->idx].alias;
                         result.kind = ID;
-                        result.data = symbol_table[T0->ptr[0]->idx].alias;
-                        T->code = merge_code_node({T->code,
-                                                   T0->ptr[0]->ptr[1]->code,
+                        result.data = symbol_table[ptr->ptr[0]->idx].alias;
+                        node->code = merge_code_node({node->code,
+                                                   ptr->ptr[0]->ptr[1]->code,
                                                    generate_code_node(ASSIGNOP, opn1, opn2, result)});
                     }
                 }
-                T0 = T0->ptr[1];
+                ptr = ptr->ptr[1];
             }
             break;
         }
         case DEF_LIST:
-            T->code = nullptr;
-            if (T->ptr[0])
+            node->code = nullptr;
+            if (node->ptr[0])
             {
-                semantic_analysis(T->ptr[0], function_name);
-                T->code = T->ptr[0]->code;
+                semantic_analysis(node->ptr[0], function_name);
+                node->code = node->ptr[0]->code;
             }
-            if (T->ptr[1])
+            if (node->ptr[1])
             {
-                semantic_analysis(T->ptr[1], function_name);
-                T->code = merge_code_node({T->code,
-                                           T->ptr[1]->code});
+                semantic_analysis(node->ptr[1], function_name);
+                node->code = merge_code_node({node->code,
+                                           node->ptr[1]->code});
             }
             break;
         case COMP_STM:
             level++;
             symbol_scope_chain_stack.push_back(symbol_table.size());
-            T->code = nullptr;
-            if (T->ptr[0])
+            node->code = nullptr;
+            if (node->ptr[0])
             {
-                semantic_analysis(T->ptr[0], function_name);
-                T->code = T->ptr[0]->code;
+                semantic_analysis(node->ptr[0], function_name);
+                node->code = node->ptr[0]->code;
             }
-            if (T->ptr[1])
+            if (node->ptr[1])
             {
-                T->ptr[1]->Snext = T->Snext;
-                semantic_analysis(T->ptr[1], function_name);
-                T->code = merge_code_node({T->code,
-                                           T->ptr[1]->code});
+                node->ptr[1]->Snext = node->Snext;
+                semantic_analysis(node->ptr[1], function_name);
+                node->code = merge_code_node({node->code,
+                                           node->ptr[1]->code});
             }
             print_symbol_table();
             level--;
@@ -685,73 +688,74 @@ void semantic_analysis(ASTNode *T, const string &function_name = "")
             symbol_scope_chain_stack.pop_back();
             break;
         case STM_LIST:
-            if (!T->ptr[0])
+            if (!node->ptr[0])
             {
-                T->code = nullptr;
+                node->code = nullptr;
                 break;
             }
-            if (T->ptr[1])
-                T->ptr[0]->Snext = new_label();
+            if (node->ptr[1])
+                node->ptr[0]->Snext = new_label();
             else
-                T->ptr[0]->Snext = T->Snext;
-            semantic_analysis(T->ptr[0], function_name);
-            T->code = T->ptr[0]->code;
-            if (T->ptr[1])
+                node->ptr[0]->Snext = node->Snext;
+            semantic_analysis(node->ptr[0], function_name);
+            node->code = node->ptr[0]->code;
+            if (node->ptr[1])
             {
-                T->ptr[1]->Snext = T->Snext;
-                semantic_analysis(T->ptr[1], function_name);
-                if (T->ptr[0]->kind == RETURN || T->ptr[0]->kind == EXP_STMT || T->ptr[0]->kind == COMP_STM)
-                    T->code = merge_code_node({T->code,
-                                               T->ptr[1]->code});
-                else
-                    T->code = merge_code_node({T->code,
-                                               generate_label(T->ptr[0]->Snext),
-                                               T->ptr[1]->code});
+                node->ptr[1]->Snext = node->Snext;
+                semantic_analysis(node->ptr[1], function_name);
+                if (node->ptr[0]->kind == RETURN || node->ptr[0]->kind == EXP_STMT || node->ptr[0]->kind == COMP_STM) {
+                    node->code = merge_code_node({node->code,
+                                               node->ptr[1]->code});
+                } else {
+                    node->code = merge_code_node({node->code,
+                                               generate_label(node->ptr[0]->Snext),
+                                               node->ptr[1]->code});
+                }
             }
             break;
         case EXP_STMT:
-            semantic_analysis(T->ptr[0], function_name);
-            T->code = T->ptr[0]->code;
+            semantic_analysis(node->ptr[0], function_name);
+            node->code = node->ptr[0]->code;
             break;
         case IF_THEN:
-            T->ptr[0]->Etrue = new_label();
-            T->ptr[0]->Efalse = T->Snext;
-            bool_expression(T->ptr[0]);
-            T->ptr[1]->Snext = T->Snext;
-            semantic_analysis(T->ptr[1], function_name);
-            T->code = merge_code_node({T->ptr[0]->code,
-                                       generate_label(T->ptr[0]->Etrue),
-                                       T->ptr[1]->code,
-                                       generate_goto(T->ptr[1]->Snext)});
+            node->ptr[0]->Etrue = new_label();
+            node->ptr[0]->Efalse = node->Snext;
+            bool_expression(node->ptr[0]);
+            node->ptr[1]->Snext = node->Snext;
+            semantic_analysis(node->ptr[1], function_name);
+            node->code = merge_code_node({node->ptr[0]->code,
+                                       generate_label(node->ptr[0]->Etrue),
+                                       node->ptr[1]->code,
+                                       generate_goto(node->ptr[1]->Snext)});
             break;
         case IF_THEN_ELSE:
-            T->ptr[0]->Etrue = new_label();
-            T->ptr[0]->Efalse = new_label();
-            bool_expression(T->ptr[0]);
-            T->ptr[1]->Snext = T->Snext;
-            semantic_analysis(T->ptr[1], function_name);
-            T->ptr[2]->Snext = T->Snext;
-            semantic_analysis(T->ptr[2], function_name);
-            T->code = merge_code_node({T->ptr[0]->code,
-                                       generate_label(T->ptr[0]->Etrue),
-                                       T->ptr[1]->code,
-                                       generate_goto(T->Snext),
-                                       generate_label(T->ptr[0]->Efalse),
-                                       T->ptr[2]->code,
-                                       generate_goto(T->Snext)});
+            node->ptr[0]->Etrue = new_label();
+            node->ptr[0]->Efalse = new_label();
+            bool_expression(node->ptr[0]);
+            node->ptr[1]->Snext = node->Snext;
+            semantic_analysis(node->ptr[1], function_name);
+            node->ptr[2]->Snext = node->Snext;
+            semantic_analysis(node->ptr[2], function_name);
+            node->code = merge_code_node({node->ptr[0]->code,
+                                       generate_label(node->ptr[0]->Etrue),
+                                       node->ptr[1]->code,
+                                       generate_goto(node->Snext),
+                                       generate_label(node->ptr[0]->Efalse),
+                                       node->ptr[2]->code,
+                                       generate_goto(node->Snext)});
             break;
         case WHILE:
-            T->ptr[0]->Etrue = new_label();
-            T->ptr[0]->Efalse = T->Snext;
-            bool_expression(T->ptr[0]);
-            T->ptr[1]->Snext = new_label();
-            semantic_analysis(T->ptr[1], function_name);
-            T->code = merge_code_node({generate_goto(T->ptr[1]->Snext),
-                                       generate_label(T->ptr[1]->Snext),
-                                       T->ptr[0]->code,
-                                       generate_label(T->ptr[0]->Etrue),
-                                       T->ptr[1]->code,
-                                       generate_goto(T->ptr[1]->Snext)});
+            node->ptr[0]->Etrue = new_label();
+            node->ptr[0]->Efalse = node->Snext;
+            bool_expression(node->ptr[0]);
+            node->ptr[1]->Snext = new_label();
+            semantic_analysis(node->ptr[1], function_name);
+            node->code = merge_code_node({generate_goto(node->ptr[1]->Snext),
+                                       generate_label(node->ptr[1]->Snext),
+                                       node->ptr[0]->code,
+                                       generate_label(node->ptr[0]->Etrue),
+                                       node->ptr[1]->code,
+                                       generate_goto(node->ptr[1]->Snext)});
             break;
         case ID:
         case INT:
@@ -767,14 +771,14 @@ void semantic_analysis(ASTNode *T, const string &function_name = "")
         case NOT:
         case UMINUS:
         case FUNC_CALL:
-            expression(T);
+            expression(node);
             break;
         }
         semantic_stack.pop_back();
     }
 }
 
-void entrypoint(ASTNode *T)
+void entrypoint(ASTNode *node)
 {
     semantic_stack.clear();
 
@@ -782,6 +786,6 @@ void entrypoint(ASTNode *T)
     symbol_table[0].paramnum = 1;
     fill_symbol_table("0", "", 1, INT, 'P');
 
-    semantic_analysis(T);
-    print_llvm_ir(T->code);
+    semantic_analysis(node);
+    print_llvm_ir(node->code);
 }
