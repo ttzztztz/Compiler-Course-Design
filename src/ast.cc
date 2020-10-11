@@ -15,10 +15,13 @@ ASTNode *make_node(int kind, int pos, vector<ASTNode *> nodes)
     node->pos = pos;
 
     int i = 0;
-    for (i = 0; i < nodes.size(); i++)
+    for (i = 0; i < nodes.size(); i++) {
         node->ptr[i] = nodes[i];
-    while (i < 4)
+    }
+
+    while (i < 4) {
         node->ptr[i++] = nullptr;
+    }
 
     return node;
 }

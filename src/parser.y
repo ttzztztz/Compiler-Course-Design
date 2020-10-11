@@ -48,12 +48,12 @@ int yylex();
 
 program: ExtDefList    { print_ast_node($1,0); entrypoint($1);}
          ;
-ExtDefList: {$$=NULL;}
+ExtDefList: {$$=nullptr;}
           | ExtDef ExtDefList {$$=make_node(EXT_DEF_LIST,yylineno,{$1,$2});}
           ;
 ExtDef:   Specifier ExtDecList SEMI   {$$=make_node(EXT_VAR_DEF,yylineno,{$1,$2});}
          |Specifier FuncDec CompSt    {$$=make_node(FUNC_DEF,yylineno,{$1,$2,$3});}
-         | error SEMI   {$$=NULL;}
+         | error SEMI   {$$=nullptr;}
          ;
 Specifier:  TYPE    {$$=make_node(TYPE,yylineno);$$->data = string($1);$$->type=(string($1) == "float")?FLOAT:INT;}   
            ;
@@ -75,7 +75,7 @@ ParamDec: Specifier VarDec         {$$=make_node(PARAM_DEC,yylineno,{$1,$2});}
 CompSt: LC DefList StmList RC    {$$=make_node(COMP_STM,yylineno,{$2,$3});}
        ;
 
-StmList: {$$=NULL; }  
+StmList: {$$=nullptr; }  
         | Stmt StmList  {$$=make_node(STM_LIST,yylineno,{$1,$2});}
         ;
 Stmt:   Exp SEMI    {$$=make_node(EXP_STMT,yylineno,{$1});}
@@ -87,9 +87,9 @@ Stmt:   Exp SEMI    {$$=make_node(EXP_STMT,yylineno,{$1});}
       | CONTINUE SEMI {$$=make_node(CONTINUE,yylineno);}
       | BREAK SEMI {$$=make_node(BREAK,yylineno);}
       ;
-DefList: {$$=NULL; }
+DefList: {$$=nullptr; }
         | Def DefList {$$=make_node(DEF_LIST,yylineno,{$1,$2});}
-        | error SEMI   {$$=NULL;}
+        | error SEMI   {$$=nullptr;}
         ;
 Def:    Specifier DecList SEMI {$$=make_node(VAR_DEF,yylineno,{$1,$2});}
         ;
