@@ -1,4 +1,4 @@
-/* A Bison parser, made by GNU Bison 3.6.4.  */
+/* A Bison parser, made by GNU Bison 3.5.1.  */
 
 /* Bison interface for Yacc-like parsers in C
 
@@ -31,9 +31,8 @@
    This special exception was added by the Free Software Foundation in
    version 2.2 of Bison.  */
 
-/* DO NOT RELY ON FEATURES THAT ARE NOT DOCUMENTED in the manual,
-   especially those whose name start with YY_ or yy_.  They are
-   private implementation details that can be changed or removed.  */
+/* Undocumented macros, especially those whose name start with YY_,
+   are private implementation details.  Do not rely on them.  */
 
 #ifndef YY_YY_PARSER_TAB_H_INCLUDED
 # define YY_YY_PARSER_TAB_H_INCLUDED
@@ -45,80 +44,75 @@
 extern int yydebug;
 #endif
 
-/* Token kinds.  */
+/* Token type.  */
 #ifndef YYTOKENTYPE
 # define YYTOKENTYPE
   enum yytokentype
   {
-    YYEMPTY = -2,
-    YYEOF = 0,                     /* "end of file"  */
-    YYerror = 256,                 /* error  */
-    YYUNDEF = 257,                 /* "invalid token"  */
-    INT = 258,                     /* INT  */
-    ID = 259,                      /* ID  */
-    RELOP = 260,                   /* RELOP  */
-    TYPE = 261,                    /* TYPE  */
-    FLOAT = 262,                   /* FLOAT  */
-    DPLUS = 263,                   /* DPLUS  */
-    LP = 264,                      /* LP  */
-    RP = 265,                      /* RP  */
-    LC = 266,                      /* LC  */
-    RC = 267,                      /* RC  */
-    SEMI = 268,                    /* SEMI  */
-    COMMA = 269,                   /* COMMA  */
-    PLUS = 270,                    /* PLUS  */
-    MINUS = 271,                   /* MINUS  */
-    STAR = 272,                    /* STAR  */
-    DIV = 273,                     /* DIV  */
-    MOD = 274,                     /* MOD  */
-    ASSIGNOP = 275,                /* ASSIGNOP  */
-    AND = 276,                     /* AND  */
-    OR = 277,                      /* OR  */
-    NOT = 278,                     /* NOT  */
-    IF = 279,                      /* IF  */
-    ELSE = 280,                    /* ELSE  */
-    WHILE = 281,                   /* WHILE  */
-    RETURN = 282,                  /* RETURN  */
-    FOR = 283,                     /* FOR  */
-    SWITCH = 284,                  /* SWITCH  */
-    CASE = 285,                    /* CASE  */
-    COLON = 286,                   /* COLON  */
-    DEFAULT = 287,                 /* DEFAULT  */
-    CONTINUE = 288,                /* CONTINUE  */
-    BREAK = 289,                   /* BREAK  */
-    EXT_DEF_LIST = 290,            /* EXT_DEF_LIST  */
-    EXT_VAR_DEF = 291,             /* EXT_VAR_DEF  */
-    FUNC_DEF = 292,                /* FUNC_DEF  */
-    FUNC_DEC = 293,                /* FUNC_DEC  */
-    EXT_DEC_LIST = 294,            /* EXT_DEC_LIST  */
-    PARAM_LIST = 295,              /* PARAM_LIST  */
-    PARAM_DEC = 296,               /* PARAM_DEC  */
-    VAR_DEF = 297,                 /* VAR_DEF  */
-    DEC_LIST = 298,                /* DEC_LIST  */
-    DEF_LIST = 299,                /* DEF_LIST  */
-    COMP_STM = 300,                /* COMP_STM  */
-    STM_LIST = 301,                /* STM_LIST  */
-    EXP_STMT = 302,                /* EXP_STMT  */
-    IF_THEN = 303,                 /* IF_THEN  */
-    IF_THEN_ELSE = 304,            /* IF_THEN_ELSE  */
-    FUNC_CALL = 305,               /* FUNC_CALL  */
-    ARGS = 306,                    /* ARGS  */
-    FUNCTION = 307,                /* FUNCTION  */
-    PARAM = 308,                   /* PARAM  */
-    ARG = 309,                     /* ARG  */
-    CALL = 310,                    /* CALL  */
-    LABEL = 311,                   /* LABEL  */
-    GOTO = 312,                    /* GOTO  */
-    JLT = 313,                     /* JLT  */
-    JLE = 314,                     /* JLE  */
-    JGT = 315,                     /* JGT  */
-    JGE = 316,                     /* JGE  */
-    EQ = 317,                      /* EQ  */
-    NEQ = 318,                     /* NEQ  */
-    UMINUS = 319,                  /* UMINUS  */
-    LOWER_THEN_ELSE = 320          /* LOWER_THEN_ELSE  */
+    INT = 258,
+    ID = 259,
+    RELOP = 260,
+    TYPE = 261,
+    FLOAT = 262,
+    DPLUS = 263,
+    LP = 264,
+    RP = 265,
+    LC = 266,
+    RC = 267,
+    SEMI = 268,
+    COMMA = 269,
+    PLUS = 270,
+    MINUS = 271,
+    STAR = 272,
+    DIV = 273,
+    MOD = 274,
+    ASSIGNOP = 275,
+    AND = 276,
+    OR = 277,
+    NOT = 278,
+    IF = 279,
+    ELSE = 280,
+    WHILE = 281,
+    RETURN = 282,
+    FOR = 283,
+    SWITCH = 284,
+    CASE = 285,
+    COLON = 286,
+    DEFAULT = 287,
+    CONTINUE = 288,
+    BREAK = 289,
+    EXT_DEF_LIST = 290,
+    EXT_VAR_DEF = 291,
+    FUNC_DEF = 292,
+    FUNC_DEC = 293,
+    EXT_DEC_LIST = 294,
+    PARAM_LIST = 295,
+    PARAM_DEC = 296,
+    VAR_DEF = 297,
+    DEC_LIST = 298,
+    DEF_LIST = 299,
+    COMP_STM = 300,
+    STM_LIST = 301,
+    EXP_STMT = 302,
+    IF_THEN = 303,
+    IF_THEN_ELSE = 304,
+    FUNC_CALL = 305,
+    ARGS = 306,
+    FUNCTION = 307,
+    PARAM = 308,
+    ARG = 309,
+    CALL = 310,
+    LABEL = 311,
+    GOTO = 312,
+    JLT = 313,
+    JLE = 314,
+    JGT = 315,
+    JGE = 316,
+    EQ = 317,
+    NEQ = 318,
+    UMINUS = 319,
+    LOWER_THEN_ELSE = 320
   };
-  typedef enum yytokentype yytoken_kind_t;
 #endif
 
 /* Value type.  */
@@ -132,7 +126,7 @@ union YYSTYPE
 	char   type_id[32];
 	class ASTNode *ptr;
 
-#line 136 "parser.tab.h"
+#line 130 "parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

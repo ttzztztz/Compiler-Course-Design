@@ -1,5 +1,5 @@
 
-#line 2 "lex.yy.c"
+#line 3 "lex.yy.c"
 
 #define  YY_INT_ALIGNED short int
 
@@ -518,7 +518,7 @@ char *yytext;
 #line 2 "./lex.l"
 #include "parser.tab.h"
 #include "string.h"
-#include "def.h"
+#include "compiler.h"
 int yycolumn=1;
 #define YY_USER_ACTION    	yylloc.first_line=yylloc.last_line=yylineno; \
 	yylloc.first_column=yycolumn;	yylloc.last_column=yycolumn+yyleng-1; yycolumn+=yyleng;
@@ -529,8 +529,8 @@ typedef union {
 	struct node *ptr;
 } YYLVAL;
 #define YYSTYPE YYLVAL
-#line 532 "lex.yy.c"
 #line 533 "lex.yy.c"
+#line 534 "lex.yy.c"
 
 #define INITIAL 0
 
@@ -749,7 +749,7 @@ YY_DECL
 	{
 #line 22 "./lex.l"
 
-#line 752 "lex.yy.c"
+#line 753 "lex.yy.c"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -977,7 +977,7 @@ YY_RULE_SETUP
 #line 56 "./lex.l"
 ECHO;
 	YY_BREAK
-#line 980 "lex.yy.c"
+#line 981 "lex.yy.c"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 

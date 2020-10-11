@@ -1,1 +1,1 @@
-g++ -O3 -o compiler ./src/lex.yy.cc ./src/parser.tab.cc ./src/ast.cc ./src/ir.cc ./src/analysis.cc ./src/functions.cc `llvm-config --cxxflags --ldflags --system-libs --libs core` -std=c++2a
+g++ -O3 -o compiler ./src/lex.yy.cc ./src/parser.tab.cc ./src/ast.cc ./src/ir.cc ./src/analysis.cc ./src/functions.cc `llvm-config --cxxflags --ldflags --system-libs --libs core` -std=c++2a -fexceptions
