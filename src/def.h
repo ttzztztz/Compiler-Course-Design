@@ -1,4 +1,4 @@
-#define register 
+#define register
 
 #include "llvm/ADT/APFloat.h"
 #include "llvm/ADT/STLExtras.h"
@@ -23,11 +23,13 @@
 #include "variant"
 #include "tuple"
 #include "optional"
+#include "memory"
 
 #include "parser.tab.h"
 
 using namespace llvm;
-using std::string, std::unordered_map, std::vector, std::variant, std::get, std::tuple, std::optional, std::nullopt;
+using std::get, std::nullopt;
+using std::string, std::unordered_map, std::vector, std::variant, std::shared_ptr, std::tuple, std::optional;
 
 #define PRINT_AST 0
 #define PRINT_SYMBOL_TABLE 0
@@ -47,9 +49,9 @@ class CodeNode
 {
 public:
     int op;
-    vector<CodeNode*> data;
+    vector<shared_ptr<CodeNode>> data;
     Operation opn1, opn2, result;
-    CodeNode *next, *prior;
+    shared_ptr<CodeNode> next, prior;
 
     CodeNode();
 };
@@ -59,10 +61,10 @@ class ASTNode
 public:
     int kind;
     variant<int, float, string> data;
-    ASTNode *ptr[4];
+    vector<ASTNode *> ptr;
     int idx;
     string Etrue, Efalse, Snext;
-    CodeNode *code;
+    shared_ptr<CodeNode> code;
     int type;
     int pos;
     int num;
@@ -84,11 +86,11 @@ public:
     Symbol();
 };
 
-ASTNode *make_node(int kind, int pos, vector<ASTNode*> nodes = vector<ASTNode*>{});
+ASTNode *make_node(int kind, int pos, vector<ASTNode *> nodes = vector<ASTNode *>{});
 void entrypoint(ASTNode *node);
 void bool_expression(ASTNode *node);
 void expression(ASTNode *node);
-void print_llvm_ir(CodeNode *head);
-optional<Symbol> search_symbol_table_with_flag(const string& name, char flag);
-tuple<Function*, FunctionType*, Function*, FunctionType*> inject_print_function(LLVMContext &ctx, IRBuilder<> &builder, Module &module);
+void print_llvm_ir(shared_ptr<CodeNode> head);
+optional<Symbol> search_symbol_table_with_flag(const string &name, char flag);
+tuple<Function *, FunctionType *, Function *, FunctionType *> inject_print_function(LLVMContext &ctx, IRBuilder<> &builder, Module &module);
 void print_symbol_table();

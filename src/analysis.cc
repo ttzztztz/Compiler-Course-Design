@@ -26,9 +26,9 @@ string new_temp()
     return "t" + std::to_string(no++);
 }
 
-CodeNode *generate_code_node(int op, Operation opn1, Operation opn2, Operation result)
+shared_ptr<CodeNode> generate_code_node(int op, Operation opn1, Operation opn2, Operation result)
 {
-    CodeNode *h = new CodeNode();
+    shared_ptr<CodeNode> h(new CodeNode());
     h->op = op;
     h->opn1 = opn1;
     h->opn2 = opn2;
@@ -37,27 +37,27 @@ CodeNode *generate_code_node(int op, Operation opn1, Operation opn2, Operation r
     return h;
 }
 
-CodeNode *generate_label(const string &label)
+shared_ptr<CodeNode> generate_label(const string &label)
 {
-    CodeNode *h = new CodeNode();
+    shared_ptr<CodeNode> h(new CodeNode());
     h->op = LABEL;
     h->result.data = label;
     h->next = h->prior = h;
     return h;
 }
 
-CodeNode *generate_goto(const string &label)
+shared_ptr<CodeNode> generate_goto(const string &label)
 {
-    CodeNode *h = new CodeNode();
+    shared_ptr<CodeNode> h(new CodeNode());
     h->op = GOTO;
     h->result.data = label;
     h->next = h->prior = h;
     return h;
 }
 
-CodeNode *merge_code_node(const vector<CodeNode *> &list)
+shared_ptr<CodeNode> merge_code_node(const vector<shared_ptr<CodeNode>> &list)
 {
-    CodeNode *h1 = list[0], *h2 = nullptr;
+    shared_ptr<CodeNode> h1 = list[0], h2 = nullptr;
 
     for (int ptr = 1; ptr < list.size(); ptr++)
     {
@@ -66,8 +66,8 @@ CodeNode *merge_code_node(const vector<CodeNode *> &list)
             h1 = h2;
         else if (h2)
         {
-            CodeNode *t1 = h1->prior;
-            CodeNode *t2 = h2->prior;
+            shared_ptr<CodeNode> t1 = h1->prior;
+            shared_ptr<CodeNode> t2 = h2->prior;
             t1->next = h2;
             t2->next = h1;
             h1->prior = t2;
@@ -242,8 +242,8 @@ void bool_expression(ASTNode *node)
             node->code = generate_code_node(op, opn1, opn2, result);
             node->code->data.push_back(generate_goto(node->Efalse));
             node->code = merge_code_node({node->ptr[0]->code,
-                                       node->ptr[1]->code,
-                                       node->code});
+                                          node->ptr[1]->code,
+                                          node->code});
             break;
         }
         case AND:
@@ -265,14 +265,14 @@ void bool_expression(ASTNode *node)
             if (node->kind == AND)
             {
                 node->code = merge_code_node({node->ptr[0]->code,
-                                           generate_label(node->ptr[0]->Etrue),
-                                           node->ptr[1]->code});
+                                              generate_label(node->ptr[0]->Etrue),
+                                              node->ptr[1]->code});
             }
             else
             {
                 node->code = merge_code_node({node->ptr[0]->code,
-                                           generate_label(node->ptr[0]->Efalse),
-                                           node->ptr[1]->code});
+                                              generate_label(node->ptr[0]->Efalse),
+                                              node->ptr[1]->code});
             }
             break;
         case NOT:
@@ -383,8 +383,8 @@ void expression(ASTNode *node)
             result.data = symbol_table[node->idx].alias;
             result.type = node->type;
             node->code = merge_code_node({node->ptr[0]->code,
-                                       node->ptr[1]->code,
-                                       generate_code_node(node->kind, opn1, opn2, result)});
+                                          node->ptr[1]->code,
+                                          generate_code_node(node->kind, opn1, opn2, result)});
             break;
         }
         case NOT: // todo
@@ -393,7 +393,7 @@ void expression(ASTNode *node)
             break;
         case FUNC_CALL:
         {
-            vector<CodeNode *> call_args;
+            vector<shared_ptr<CodeNode>> call_args;
             Operation opn1, opn2, result;
 
             auto fill_result = search_symbol_table(get<string>(node->data));
@@ -433,11 +433,11 @@ void expression(ASTNode *node)
             result.kind = ID;
             result.data = symbol_table[node->idx].alias;
 
-            auto *call_code_node = generate_code_node(CALL, opn1, opn2, result);
+            auto call_code_node = generate_code_node(CALL, opn1, opn2, result);
             call_code_node->data = call_args;
 
             node->code = merge_code_node({node->code,
-                                       call_code_node});
+                                          call_code_node});
             break;
         }
         case ARGS:
@@ -447,7 +447,7 @@ void expression(ASTNode *node)
             {
                 expression(node->ptr[1]);
                 node->code = merge_code_node({node->code,
-                                           node->ptr[1]->code});
+                                              node->ptr[1]->code});
             }
             break;
         }
@@ -517,7 +517,8 @@ void semantic_analysis(ASTNode *node, const string &function_name = "")
             break;
         }
         case EXT_DEF_LIST:
-            if (!node->ptr[0]) {
+            if (!node->ptr[0])
+            {
                 break;
             }
             semantic_analysis(node->ptr[0], function_name);
@@ -526,7 +527,7 @@ void semantic_analysis(ASTNode *node, const string &function_name = "")
             {
                 semantic_analysis(node->ptr[1], function_name);
                 node->code = merge_code_node({node->code,
-                                           node->ptr[1]->code});
+                                              node->ptr[1]->code});
             }
             break;
         case EXT_VAR_DEF:
@@ -612,7 +613,8 @@ void semantic_analysis(ASTNode *node, const string &function_name = "")
             {
                 num++;
                 ptr->ptr[0]->type = ptr->type;
-                if (ptr->ptr[1]) {
+                if (ptr->ptr[1])
+                {
                     ptr->ptr[1]->type = ptr->type;
                 }
 
@@ -642,8 +644,8 @@ void semantic_analysis(ASTNode *node, const string &function_name = "")
                         result.kind = ID;
                         result.data = symbol_table[ptr->ptr[0]->idx].alias;
                         node->code = merge_code_node({node->code,
-                                                   ptr->ptr[0]->ptr[1]->code,
-                                                   generate_code_node(ASSIGNOP, opn1, opn2, result)});
+                                                      ptr->ptr[0]->ptr[1]->code,
+                                                      generate_code_node(ASSIGNOP, opn1, opn2, result)});
                     }
                 }
                 ptr = ptr->ptr[1];
@@ -661,7 +663,7 @@ void semantic_analysis(ASTNode *node, const string &function_name = "")
             {
                 semantic_analysis(node->ptr[1], function_name);
                 node->code = merge_code_node({node->code,
-                                           node->ptr[1]->code});
+                                              node->ptr[1]->code});
             }
             break;
         case COMP_STM:
@@ -678,7 +680,7 @@ void semantic_analysis(ASTNode *node, const string &function_name = "")
                 node->ptr[1]->Snext = node->Snext;
                 semantic_analysis(node->ptr[1], function_name);
                 node->code = merge_code_node({node->code,
-                                           node->ptr[1]->code});
+                                              node->ptr[1]->code});
             }
             print_symbol_table();
             level--;
@@ -701,13 +703,16 @@ void semantic_analysis(ASTNode *node, const string &function_name = "")
             {
                 node->ptr[1]->Snext = node->Snext;
                 semantic_analysis(node->ptr[1], function_name);
-                if (node->ptr[0]->kind == RETURN || node->ptr[0]->kind == EXP_STMT || node->ptr[0]->kind == COMP_STM) {
+                if (node->ptr[0]->kind == RETURN || node->ptr[0]->kind == EXP_STMT || node->ptr[0]->kind == COMP_STM)
+                {
                     node->code = merge_code_node({node->code,
-                                               node->ptr[1]->code});
-                } else {
+                                                  node->ptr[1]->code});
+                }
+                else
+                {
                     node->code = merge_code_node({node->code,
-                                               generate_label(node->ptr[0]->Snext),
-                                               node->ptr[1]->code});
+                                                  generate_label(node->ptr[0]->Snext),
+                                                  node->ptr[1]->code});
                 }
             }
             break;
@@ -722,9 +727,9 @@ void semantic_analysis(ASTNode *node, const string &function_name = "")
             node->ptr[1]->Snext = node->Snext;
             semantic_analysis(node->ptr[1], function_name);
             node->code = merge_code_node({node->ptr[0]->code,
-                                       generate_label(node->ptr[0]->Etrue),
-                                       node->ptr[1]->code,
-                                       generate_goto(node->ptr[1]->Snext)});
+                                          generate_label(node->ptr[0]->Etrue),
+                                          node->ptr[1]->code,
+                                          generate_goto(node->ptr[1]->Snext)});
             break;
         case IF_THEN_ELSE:
             node->ptr[0]->Etrue = new_label();
@@ -735,12 +740,12 @@ void semantic_analysis(ASTNode *node, const string &function_name = "")
             node->ptr[2]->Snext = node->Snext;
             semantic_analysis(node->ptr[2], function_name);
             node->code = merge_code_node({node->ptr[0]->code,
-                                       generate_label(node->ptr[0]->Etrue),
-                                       node->ptr[1]->code,
-                                       generate_goto(node->Snext),
-                                       generate_label(node->ptr[0]->Efalse),
-                                       node->ptr[2]->code,
-                                       generate_goto(node->Snext)});
+                                          generate_label(node->ptr[0]->Etrue),
+                                          node->ptr[1]->code,
+                                          generate_goto(node->Snext),
+                                          generate_label(node->ptr[0]->Efalse),
+                                          node->ptr[2]->code,
+                                          generate_goto(node->Snext)});
             break;
         case WHILE:
             node->ptr[0]->Etrue = new_label();
@@ -749,11 +754,11 @@ void semantic_analysis(ASTNode *node, const string &function_name = "")
             node->ptr[1]->Snext = new_label();
             semantic_analysis(node->ptr[1], function_name);
             node->code = merge_code_node({generate_goto(node->ptr[1]->Snext),
-                                       generate_label(node->ptr[1]->Snext),
-                                       node->ptr[0]->code,
-                                       generate_label(node->ptr[0]->Etrue),
-                                       node->ptr[1]->code,
-                                       generate_goto(node->ptr[1]->Snext)});
+                                          generate_label(node->ptr[1]->Snext),
+                                          node->ptr[0]->code,
+                                          generate_label(node->ptr[0]->Etrue),
+                                          node->ptr[1]->code,
+                                          generate_goto(node->ptr[1]->Snext)});
             break;
         case ID:
         case INT:

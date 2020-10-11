@@ -24,7 +24,7 @@ Value *prepare_opn(LLVMContext &TheContext, unordered_map<string, Value *> &val_
     return nullptr;
 }
 
-void print_llvm_ir(CodeNode *head)
+void print_llvm_ir(shared_ptr<CodeNode>head)
 {
     LLVMContext TheContext;
     Module TheModule("code", TheContext);
@@ -64,7 +64,7 @@ void print_llvm_ir(CodeNode *head)
         }
     };
 
-    CodeNode *cur = head;
+    shared_ptr<CodeNode>cur = head;
     do
     {
         Value *l = prepare_opn(TheContext, val_table, cur->opn1), *r = prepare_opn(TheContext, val_table, cur->opn2);
