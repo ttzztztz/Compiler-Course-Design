@@ -24,7 +24,7 @@ Value *prepare_opn(LLVMContext &TheContext, unordered_map<string, Value *> &val_
     return nullptr;
 }
 
-void print_llvm_ir(shared_ptr<CodeNode>head)
+void print_llvm_ir(shared_ptr<CodeNode> head)
 {
     LLVMContext TheContext;
     Module TheModule("code", TheContext);
@@ -36,7 +36,7 @@ void print_llvm_ir(shared_ptr<CodeNode>head)
     unordered_map<string, pair<Function *, FunctionType *>> function_table;
     unordered_map<string, Value *> val_table;
     unordered_map<string, BasicBlock *> label_table;
-    unordered_set<BasicBlock*> finished_block;
+    unordered_set<BasicBlock *> finished_block;
 
     typedef tuple<Instruction *, Value *, string, string> DeferredBrStatementType;
 
@@ -49,8 +49,9 @@ void print_llvm_ir(shared_ptr<CodeNode>head)
     function_table["print_int"] = {print_int_func, print_int_func_type};
 
     auto create_goto = [&](const string &label) -> void {
-        auto* current_basic_block = block_stack.back();
-        if (finished_block.count(current_basic_block)) return;
+        auto *current_basic_block = block_stack.back();
+        if (finished_block.count(current_basic_block))
+            return;
         finished_block.insert(current_basic_block);
 
         if (label_table.count(label))
@@ -64,7 +65,7 @@ void print_llvm_ir(shared_ptr<CodeNode>head)
         }
     };
 
-    shared_ptr<CodeNode>cur = head;
+    shared_ptr<CodeNode> cur = head;
     do
     {
         Value *l = prepare_opn(TheContext, val_table, cur->opn1), *r = prepare_opn(TheContext, val_table, cur->opn2);
