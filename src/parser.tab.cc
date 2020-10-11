@@ -1773,7 +1773,7 @@ yyreduce:
 
   case 3:
 #line 51 "./parser.y"
-            {(yyval.ptr)=NULL;}
+            {(yyval.ptr)=nullptr;}
 #line 1778 "parser.tab.c"
     break;
 
@@ -1797,7 +1797,7 @@ yyreduce:
 
   case 7:
 #line 56 "./parser.y"
-                        {(yyval.ptr)=NULL;}
+                        {(yyval.ptr)=nullptr;}
 #line 1802 "parser.tab.c"
     break;
 
@@ -1863,7 +1863,7 @@ yyreduce:
 
   case 18:
 #line 78 "./parser.y"
-         {(yyval.ptr)=NULL; }
+         {(yyval.ptr)=nullptr; }
 #line 1868 "parser.tab.c"
     break;
 
@@ -1923,7 +1923,7 @@ yyreduce:
 
   case 28:
 #line 90 "./parser.y"
-         {(yyval.ptr)=NULL; }
+         {(yyval.ptr)=nullptr; }
 #line 1928 "parser.tab.c"
     break;
 
@@ -1935,7 +1935,7 @@ yyreduce:
 
   case 30:
 #line 92 "./parser.y"
-                       {(yyval.ptr)=NULL;}
+                       {(yyval.ptr)=nullptr;}
 #line 1940 "parser.tab.c"
     break;
 
