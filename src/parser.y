@@ -4,7 +4,7 @@
 #include "stdio.h"
 #include "math.h"
 #include "string.h"
-#include "def.h"
+#include "compiler.h"
 extern int yylineno;
 extern char *yytext;
 extern FILE *yyin;
@@ -63,7 +63,7 @@ ExtDecList:  VarDec      {$$=$1;}
 VarDec:  ID          {$$=make_node(ID,yylineno);$$->data = $1;}
          ;
 FuncDec: ID LP VarList RP   {$$=make_node(FUNC_DEC,yylineno,{$3});$$->data = $1;}
-		|ID LP  RP   {$$=make_node(FUNC_DEC,yylineno);$$->data = $1;$$->ptr[0]=NULL;}
+		|ID LP  RP   {$$=make_node(FUNC_DEC,yylineno);$$->data = $1;$$->ptr[0]=nullptr;}
 
         ;
 VarList: ParamDec  {$$=make_node(PARAM_LIST,yylineno,{$1});}
@@ -97,22 +97,22 @@ DecList: Dec  {$$=make_node(DEC_LIST,yylineno,{$1});}
        | Dec COMMA DecList  {$$=make_node(DEC_LIST,yylineno,{$1,$3});}
 	   ;
 Dec:     VarDec  {$$=$1;}
-       | VarDec ASSIGNOP Exp  {$$=make_node(ASSIGNOP,yylineno,{$1,$3});$$->data = "ASSIGNOP";}
+       | VarDec ASSIGNOP Exp  {$$=make_node(ASSIGNOP,yylineno,{$1,$3});}
        ;
-Exp:    Exp ASSIGNOP Exp {$$=make_node(ASSIGNOP,yylineno,{$1,$3});$$->data = "ASSIGNOP";}
-      | Exp AND Exp   {$$=make_node(AND,yylineno,{$1,$3});$$->data = "AND";}
-      | Exp OR Exp    {$$=make_node(OR,yylineno,{$1,$3});$$->data = "OR";}
+Exp:    Exp ASSIGNOP Exp {$$=make_node(ASSIGNOP,yylineno,{$1,$3});}
+      | Exp AND Exp   {$$=make_node(AND,yylineno,{$1,$3});}
+      | Exp OR Exp    {$$=make_node(OR,yylineno,{$1,$3});}
       | Exp RELOP Exp {$$=make_node(RELOP,yylineno,{$1,$3});$$->data = $2;}
-      | Exp PLUS Exp  {$$=make_node(PLUS,yylineno,{$1,$3});$$->data = "PLUS";}
-      | Exp MINUS Exp {$$=make_node(MINUS,yylineno,{$1,$3});$$->data = "MINUS";}
-      | Exp STAR Exp  {$$=make_node(STAR,yylineno,{$1,$3});$$->data = "STAR";}
-      | Exp MOD Exp  {$$=make_node(MOD,yylineno,{$1,$3});$$->data = "MOD";}
-      | Exp DIV Exp   {$$=make_node(DIV,yylineno,{$1,$3});$$->data = "DIV";}
+      | Exp PLUS Exp  {$$=make_node(PLUS,yylineno,{$1,$3});}
+      | Exp MINUS Exp {$$=make_node(MINUS,yylineno,{$1,$3});}
+      | Exp STAR Exp  {$$=make_node(STAR,yylineno,{$1,$3});}
+      | Exp MOD Exp  {$$=make_node(MOD,yylineno,{$1,$3});}
+      | Exp DIV Exp   {$$=make_node(DIV,yylineno,{$1,$3});}
       | LP Exp RP     {$$=$2;}
-      | MINUS Exp %prec UMINUS   {$$=make_node(UMINUS,yylineno,{$2});$$->data = "UMINUS";}
-      | NOT Exp       {$$=make_node(NOT,yylineno,{$2});$$->data = "NOT";}
-      | DPLUS  Exp      {$$=make_node(DPLUS,yylineno,{$2});$$->data = "DPLUS";}
-      |   Exp DPLUS      {$$=make_node(DPLUS,yylineno,{$1});$$->data = "DPLUS";}
+      | MINUS Exp %prec UMINUS   {$$=make_node(UMINUS,yylineno,{$2});}
+      | NOT Exp       {$$=make_node(NOT,yylineno,{$2});}
+      | DPLUS  Exp      {$$=make_node(DPLUS,yylineno,{$2});}
+      | Exp DPLUS      {$$=make_node(DPLUS,yylineno,{$1});}
       | ID LP Args RP {$$=make_node(FUNC_CALL,yylineno,{$3});$$->data = $1;}
       | ID LP RP      {$$=make_node(FUNC_CALL,yylineno);$$->data = $1;}
       | ID            {$$=make_node(ID,yylineno);$$->data = $1;}
@@ -126,7 +126,15 @@ Args:    Exp COMMA Args    {$$=make_node(ARGS,yylineno,{$1,$3});}
 %%
 
 int main(int argc, char *argv[]) {
-    yyin = fopen(argv[1], "r");
+    string file_path;
+    if (argc >= 2) {
+        file_path = string(argv[1]);
+    } else {
+        file_path = "./test.txt";
+    }
+
+    printf("File path = %s\n", file_path.c_str());
+    yyin = fopen(file_path.c_str(), "r");
     if (!yyin) exit(0);
     yylineno = 1;
     yyparse();
