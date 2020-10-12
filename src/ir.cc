@@ -8,20 +8,20 @@ using std::pair, std::tuple, std::list, std::make_unique, std::unordered_set;
 
 extern vector<Symbol> symbol_table;
 
-Value *prepare_opn(LLVMContext &TheContext, unordered_map<string, Value *> &val_table, const Operation &op)
+pair<Value *, int> prepare_opn(LLVMContext &TheContext, unordered_map<string, pair<Value *, int>> &val_table, const Operation &op)
 {
     switch (op.kind)
     {
     case INT:
-        return ConstantInt::get(Type::getInt32Ty(TheContext), get<int>(op.data));
+        return {ConstantInt::get(Type::getInt32Ty(TheContext), get<int>(op.data)), INT};
     case FLOAT:
-        return ConstantInt::get(Type::getInt32Ty(TheContext), get<float>(op.data));
+        return {ConstantFP::get(Type::getFloatTy(TheContext), get<float>(op.data)), FLOAT};
     case ID:
         if (val_table.count(get<string>(op.data)))
             return val_table[get<string>(op.data)];
     }
 
-    return nullptr;
+    return {nullptr, 0};
 }
 
 void print_llvm_ir(shared_ptr<CodeNode> head)
@@ -34,7 +34,7 @@ void print_llvm_ir(shared_ptr<CodeNode> head)
     vector<Function *> function_stack;
 
     unordered_map<string, pair<Function *, FunctionType *>> function_table;
-    unordered_map<string, Value *> val_table;
+    unordered_map<string, pair<Value *, int>> val_table;
     unordered_map<string, BasicBlock *> label_table;
     unordered_set<BasicBlock *> finished_block;
 
@@ -68,7 +68,8 @@ void print_llvm_ir(shared_ptr<CodeNode> head)
     shared_ptr<CodeNode> cur = head;
     do
     {
-        Value *l = prepare_opn(TheContext, val_table, cur->opn1), *r = prepare_opn(TheContext, val_table, cur->opn2);
+        auto [l, l_type] = prepare_opn(TheContext, val_table, cur->opn1);
+        auto [r, r_type] = prepare_opn(TheContext, val_table, cur->opn2);
         switch (cur->op)
         {
         case ASSIGNOP:
@@ -78,17 +79,19 @@ void print_llvm_ir(shared_ptr<CodeNode> head)
             Value *alloc = nullptr;
             if (val_table.count(var_name))
             {
-                alloc = val_table[var_name];
+                alloc = val_table[var_name].first;
             }
             else
             {
-                alloc = builder_stack.back().CreateAlloca(Type::getInt32Ty(TheContext), nullptr, var_name);
-                val_table[var_name] = alloc;
+                auto type = l_type == FLOAT ? Type::getFloatTy(TheContext) : Type::getInt32Ty(TheContext);
+
+                alloc = builder_stack.back().CreateAlloca(type, nullptr, var_name);
+                val_table[var_name] = {alloc, l_type};
             }
 
             if (l->getType()->isPointerTy())
             {
-                l = builder_stack.back().CreateLoad(Type::getInt32Ty(TheContext), l, "");
+                l = builder_stack.back().CreateLoad(l_type == FLOAT ? Type::getFloatTy(TheContext) : Type::getInt32Ty(TheContext), l, "");
             }
             builder_stack.back().CreateStore(l, alloc);
             break;
@@ -100,35 +103,88 @@ void print_llvm_ir(shared_ptr<CodeNode> head)
         case DIV:
         case MOD:
         {
+            bool have_float_type = false;
+            if (l->getType()->isFloatTy() || r->getType()->isFloatTy() || l_type == FLOAT || r_type == FLOAT)
+            {
+                have_float_type = true;
+            }
+
             if (l->getType()->isPointerTy())
             {
-                l = builder_stack.back().CreateLoad(Type::getInt32Ty(TheContext), l, "");
+                auto type = l_type == FLOAT ? Type::getFloatTy(TheContext) : Type::getInt32Ty(TheContext);
+                l = builder_stack.back().CreateLoad(type, l, "");
             }
             if (r->getType()->isPointerTy())
             {
-                r = builder_stack.back().CreateLoad(Type::getInt32Ty(TheContext), r, "");
+                auto type = r_type == FLOAT ? Type::getFloatTy(TheContext) : Type::getInt32Ty(TheContext);
+                r = builder_stack.back().CreateLoad(type, r, "");
             }
             Value *res = nullptr;
 
             if (cur->op == PLUS)
-                res = builder_stack.back().CreateAdd(l, r, get<string>(cur->result.data));
+            {
+                if (have_float_type)
+                {
+                    res = builder_stack.back().CreateFAdd(l, r, get<string>(cur->result.data));
+                }
+                else
+                {
+                    res = builder_stack.back().CreateAdd(l, r, get<string>(cur->result.data));
+                }
+            }
             else if (cur->op == MINUS)
-                res = builder_stack.back().CreateSub(l, r, get<string>(cur->result.data));
+            {
+                if (have_float_type)
+                {
+                    res = builder_stack.back().CreateFSub(l, r, get<string>(cur->result.data));
+                }
+                else
+                {
+                    res = builder_stack.back().CreateSub(l, r, get<string>(cur->result.data));
+                }
+            }
             else if (cur->op == STAR)
-                res = builder_stack.back().CreateMul(l, r, get<string>(cur->result.data));
+            {
+                if (have_float_type)
+                {
+                    res = builder_stack.back().CreateFMul(l, r, get<string>(cur->result.data));
+                }
+                else
+                {
+                    res = builder_stack.back().CreateMul(l, r, get<string>(cur->result.data));
+                }
+            }
             else if (cur->op == DIV)
-                res = builder_stack.back().CreateSDiv(l, r, get<string>(cur->result.data));
+            {
+                if (have_float_type)
+                {
+                    res = builder_stack.back().CreateFDiv(l, r, get<string>(cur->result.data));
+                }
+                else
+                {
+                    res = builder_stack.back().CreateSDiv(l, r, get<string>(cur->result.data));
+                }
+            }
             else if (cur->op == MOD)
-                res = builder_stack.back().CreateSRem(l, r, get<string>(cur->result.data));
+            {
+                if (have_float_type)
+                {
+                    throw std::runtime_error("cannot mod float value.");
+                }
+                else
+                {
+                    res = builder_stack.back().CreateSRem(l, r, get<string>(cur->result.data));
+                }
+            }
 
-            val_table[get<string>(cur->result.data)] = res;
+            val_table[get<string>(cur->result.data)] = {res, have_float_type ? FLOAT : INT};
             break;
         }
         case RETURN:
         {
             if (cur->result.kind)
             {
-                Value *return_val = val_table[get<string>(cur->result.data)];
+                auto [return_val, return_type] = val_table[get<string>(cur->result.data)];
                 if (return_val->getType()->isPointerTy())
                 {
                     return_val = builder_stack.back().CreateLoad(Type::getInt32Ty(TheContext), return_val, "");
@@ -158,14 +214,7 @@ void print_llvm_ir(shared_ptr<CodeNode> head)
             for (int i = 0; i < fill_result.value().paramnum; i++)
             {
                 const int offset = i + fill_result.value().idx + 1;
-                if (symbol_table[offset].type == INT)
-                {
-                    parameters.push_back(Type::getInt32Ty(TheContext));
-                }
-                else if (symbol_table[offset].type == FLOAT)
-                {
-                    parameters.push_back(Type::getFloatTy(TheContext));
-                }
+                parameters.push_back(symbol_table[offset].type == FLOAT ? Type::getFloatTy(TheContext) : Type::getInt32Ty(TheContext));
             }
             Type *return_type = Type::getInt32Ty(TheContext);
             FunctionType *function_type = FunctionType::get(return_type, parameters, false);
@@ -175,7 +224,7 @@ void print_llvm_ir(shared_ptr<CodeNode> head)
             int ptr = fill_result.value().idx + 1;
             for (auto &arg : function_value->args())
             {
-                val_table[symbol_table[ptr].alias] = &arg;
+                val_table[symbol_table[ptr].alias] = {&arg, symbol_table[ptr].type};
                 arg.setName(symbol_table[ptr].alias);
                 ptr++;
             }
@@ -191,11 +240,17 @@ void print_llvm_ir(shared_ptr<CodeNode> head)
             vector<Value *> parameters;
             for (auto arg : cur->data)
             {
-                auto *load = builder_stack.back().CreateLoad(Type::getInt32Ty(TheContext), val_table[get<string>(arg->result.data)], "");
-                parameters.push_back(load);
+                auto [val, val_type] = val_table[get<string>(arg->result.data)];
+                if (val->getType()->isPointerTy())
+                {
+                    auto type = val_type == FLOAT ? Type::getFloatTy(TheContext) : Type::getInt32Ty(TheContext);
+                    val = builder_stack.back().CreateLoad(type, val, "");
+                }
+
+                parameters.push_back(val);
             }
 
-            val_table[get<string>(cur->result.data)] = builder_stack.back().CreateCall(fn_type, fn, parameters, get<string>(cur->result.data));
+            val_table[get<string>(cur->result.data)] = {builder_stack.back().CreateCall(fn_type, fn, parameters, get<string>(cur->result.data)), fn_type->getReturnType()->isFloatTy() ? FLOAT : INT};
             break;
         }
 

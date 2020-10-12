@@ -24,7 +24,8 @@ float  ([0-9]*\.[0-9]+)|([0-9]+\.)
 {float}      {yylval.type_float = atof(yytext); return FLOAT;}
 "int"        {strcpy(yylval.type_id, yytext);return TYPE;}
 "float"      {strcpy(yylval.type_id, yytext);return TYPE;}
-"i32"        {strcpy(yylval.type_id, yytext);return TYPE;}
+"i32"        {strcpy(yylval.type_id, "int");return TYPE;}
+"f32"        {strcpy(yylval.type_id, "float");return TYPE;}
 
 "return"     {return RETURN;}
 "if"         {return IF;}

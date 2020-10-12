@@ -4,6 +4,7 @@ int add(int a, int b) {
 
 int main() {
     int a = 12;
+    float b = 1.2 + 3.6;
 
     while (a > 0) {
         if (add(a, 1) % 2 == 1) {
