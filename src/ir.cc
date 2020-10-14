@@ -308,24 +308,52 @@ void print_llvm_ir(shared_ptr<CodeNode> head)
         {
             Value *val = nullptr;
 
-            // type inconsistency
-            if (l && l->getType()->isPointerTy())
-                l = builder_stack.back().CreateLoad(Type::getInt32Ty(TheContext), l, "");
-            if (r && r->getType()->isPointerTy())
-                r = builder_stack.back().CreateLoad(Type::getInt32Ty(TheContext), r, "");
+            if (l_type != r_type) 
+            {
+                throw std::runtime_error("inconsistency float and int type.");
+            }
 
-            if (cur->op == EQ)
-                val = builder_stack.back().CreateICmpEQ(l, r, "cmpres");
-            else if (cur->op == NEQ)
-                val = builder_stack.back().CreateICmpNE(l, r, "cmpres");
-            else if (cur->op == JGE)
-                val = builder_stack.back().CreateICmpSGE(l, r, "cmpres");
-            else if (cur->op == JGT)
-                val = builder_stack.back().CreateICmpSGT(l, r, "cmpres");
-            else if (cur->op == JLE)
-                val = builder_stack.back().CreateICmpSLE(l, r, "cmpres");
-            else if (cur->op == JLT)
-                val = builder_stack.back().CreateICmpSLT(l, r, "cmpres");
+            bool cmp_float = l_type == FLOAT || r_type == FLOAT;
+            if (cmp_float)
+            {
+                if (l && l->getType()->isPointerTy())
+                    l = builder_stack.back().CreateLoad(Type::getFloatTy(TheContext), l, "");
+                if (r && r->getType()->isPointerTy())
+                    r = builder_stack.back().CreateLoad(Type::getFloatTy(TheContext), r, "");
+
+                if (cur->op == EQ)
+                    val = builder_stack.back().CreateFCmpOEQ(l, r, "cmpres");
+                else if (cur->op == NEQ)
+                    val = builder_stack.back().CreateFCmpONE(l, r, "cmpres");
+                else if (cur->op == JGE)
+                    val = builder_stack.back().CreateFCmpOGE(l, r, "cmpres");
+                else if (cur->op == JGT)
+                    val = builder_stack.back().CreateFCmpOGT(l, r, "cmpres");
+                else if (cur->op == JLE)
+                    val = builder_stack.back().CreateFCmpOLE(l, r, "cmpres");
+                else if (cur->op == JLT)
+                    val = builder_stack.back().CreateFCmpOLT(l, r, "cmpres");
+            }
+            else
+            { // int
+                if (l && l->getType()->isPointerTy())
+                    l = builder_stack.back().CreateLoad(Type::getInt32Ty(TheContext), l, "");
+                if (r && r->getType()->isPointerTy())
+                    r = builder_stack.back().CreateLoad(Type::getInt32Ty(TheContext), r, "");
+
+                if (cur->op == EQ)
+                    val = builder_stack.back().CreateICmpEQ(l, r, "cmpres");
+                else if (cur->op == NEQ)
+                    val = builder_stack.back().CreateICmpNE(l, r, "cmpres");
+                else if (cur->op == JGE)
+                    val = builder_stack.back().CreateICmpSGE(l, r, "cmpres");
+                else if (cur->op == JGT)
+                    val = builder_stack.back().CreateICmpSGT(l, r, "cmpres");
+                else if (cur->op == JLE)
+                    val = builder_stack.back().CreateICmpSLE(l, r, "cmpres");
+                else if (cur->op == JLT)
+                    val = builder_stack.back().CreateICmpSLT(l, r, "cmpres");
+            }
 
             const string &true_label = get<string>(cur->result.data), &false_label = get<string>(cur->data[0]->result.data);
             if (label_table.count(true_label) && label_table.count(false_label))
@@ -343,7 +371,9 @@ void print_llvm_ir(shared_ptr<CodeNode> head)
         cur = cur->next;
     } while (cur != head);
 
+#if PRINT_LLVM_IR == 1
     TheModule.print(errs(), nullptr);
+#endif
     verifyModule(TheModule, &(errs()));
 
     std::unique_ptr<Module> ptr(&TheModule);
