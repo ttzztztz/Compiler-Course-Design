@@ -52,7 +52,7 @@ float  ([0-9]*\.[0-9]+)|([0-9]+\.)
 "{"			{return LC;}
 "}"			{return RC;}
 [\n]        {yycolumn=1;}   
-[ \r\t]     {}   
+[ \r\t]     {}
 .			{printf("Error type A :Mysterious character \"%s\"\n\t at Line %d\n", yytext, yylineno);}
 %%
 

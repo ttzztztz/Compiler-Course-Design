@@ -33,6 +33,7 @@ using std::string, std::unordered_map, std::vector, std::variant, std::shared_pt
 
 #define PRINT_AST 0
 #define PRINT_SYMBOL_TABLE 0
+#define PRINT_LLVM_IR 1
 
 class Operation
 {
