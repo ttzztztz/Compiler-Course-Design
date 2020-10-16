@@ -8,17 +8,17 @@ using std::pair, std::tuple, std::list, std::make_unique, std::unordered_set;
 
 extern vector<Symbol> symbol_table;
 
-pair<Value *, int> prepare_opn(LLVMContext &TheContext, unordered_map<string, pair<Value *, int>> &val_table, const Operation &op)
+pair<Value *, int> prepare_opn(LLVMContext &TheContext, unordered_map<string, pair<Value *, int>> &val_table, const Operation &operation)
 {
-    switch (op.kind)
+    switch (operation.kind)
     {
     case INT:
-        return {ConstantInt::get(Type::getInt32Ty(TheContext), get<int>(op.data)), INT};
+        return {ConstantInt::get(Type::getInt32Ty(TheContext), get<int>(operation.data)), INT};
     case FLOAT:
-        return {ConstantFP::get(Type::getFloatTy(TheContext), get<float>(op.data)), FLOAT};
+        return {ConstantFP::get(Type::getFloatTy(TheContext), get<float>(operation.data)), FLOAT};
     case ID:
-        if (val_table.count(get<string>(op.data)))
-            return val_table[get<string>(op.data)];
+        if (val_table.count(get<string>(operation.data)))
+            return val_table[get<string>(operation.data)];
     }
 
     return {nullptr, 0};
@@ -70,7 +70,7 @@ void print_llvm_ir(shared_ptr<CodeNode> head)
     {
         auto [l, l_type] = prepare_opn(TheContext, val_table, cur->opn1);
         auto [r, r_type] = prepare_opn(TheContext, val_table, cur->opn2);
-        switch (cur->op)
+        switch (cur->kind)
         {
         case ASSIGNOP:
         {
@@ -121,7 +121,7 @@ void print_llvm_ir(shared_ptr<CodeNode> head)
             }
             Value *res = nullptr;
 
-            if (cur->op == PLUS)
+            if (cur->kind == PLUS)
             {
                 if (have_float_type)
                 {
@@ -132,7 +132,7 @@ void print_llvm_ir(shared_ptr<CodeNode> head)
                     res = builder_stack.back().CreateAdd(l, r, get<string>(cur->result.data));
                 }
             }
-            else if (cur->op == MINUS)
+            else if (cur->kind == MINUS)
             {
                 if (have_float_type)
                 {
@@ -143,7 +143,7 @@ void print_llvm_ir(shared_ptr<CodeNode> head)
                     res = builder_stack.back().CreateSub(l, r, get<string>(cur->result.data));
                 }
             }
-            else if (cur->op == STAR)
+            else if (cur->kind == STAR)
             {
                 if (have_float_type)
                 {
@@ -154,7 +154,7 @@ void print_llvm_ir(shared_ptr<CodeNode> head)
                     res = builder_stack.back().CreateMul(l, r, get<string>(cur->result.data));
                 }
             }
-            else if (cur->op == DIV)
+            else if (cur->kind == DIV)
             {
                 if (have_float_type)
                 {
@@ -165,7 +165,7 @@ void print_llvm_ir(shared_ptr<CodeNode> head)
                     res = builder_stack.back().CreateSDiv(l, r, get<string>(cur->result.data));
                 }
             }
-            else if (cur->op == MOD)
+            else if (cur->kind == MOD)
             {
                 if (have_float_type)
                 {
@@ -321,17 +321,17 @@ void print_llvm_ir(shared_ptr<CodeNode> head)
                 if (r && r->getType()->isPointerTy())
                     r = builder_stack.back().CreateLoad(Type::getFloatTy(TheContext), r, "");
 
-                if (cur->op == EQ)
+                if (cur->kind == EQ)
                     val = builder_stack.back().CreateFCmpOEQ(l, r, "cmpres");
-                else if (cur->op == NEQ)
+                else if (cur->kind == NEQ)
                     val = builder_stack.back().CreateFCmpONE(l, r, "cmpres");
-                else if (cur->op == JGE)
+                else if (cur->kind == JGE)
                     val = builder_stack.back().CreateFCmpOGE(l, r, "cmpres");
-                else if (cur->op == JGT)
+                else if (cur->kind == JGT)
                     val = builder_stack.back().CreateFCmpOGT(l, r, "cmpres");
-                else if (cur->op == JLE)
+                else if (cur->kind == JLE)
                     val = builder_stack.back().CreateFCmpOLE(l, r, "cmpres");
-                else if (cur->op == JLT)
+                else if (cur->kind == JLT)
                     val = builder_stack.back().CreateFCmpOLT(l, r, "cmpres");
             }
             else
@@ -341,17 +341,17 @@ void print_llvm_ir(shared_ptr<CodeNode> head)
                 if (r && r->getType()->isPointerTy())
                     r = builder_stack.back().CreateLoad(Type::getInt32Ty(TheContext), r, "");
 
-                if (cur->op == EQ)
+                if (cur->kind == EQ)
                     val = builder_stack.back().CreateICmpEQ(l, r, "cmpres");
-                else if (cur->op == NEQ)
+                else if (cur->kind == NEQ)
                     val = builder_stack.back().CreateICmpNE(l, r, "cmpres");
-                else if (cur->op == JGE)
+                else if (cur->kind == JGE)
                     val = builder_stack.back().CreateICmpSGE(l, r, "cmpres");
-                else if (cur->op == JGT)
+                else if (cur->kind == JGT)
                     val = builder_stack.back().CreateICmpSGT(l, r, "cmpres");
-                else if (cur->op == JLE)
+                else if (cur->kind == JLE)
                     val = builder_stack.back().CreateICmpSLE(l, r, "cmpres");
-                else if (cur->op == JLT)
+                else if (cur->kind == JLT)
                     val = builder_stack.back().CreateICmpSLT(l, r, "cmpres");
             }
 

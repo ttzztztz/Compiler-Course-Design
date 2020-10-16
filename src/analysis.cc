@@ -26,32 +26,32 @@ string new_temp()
     return "t" + std::to_string(no++);
 }
 
-shared_ptr<CodeNode> generate_code_node(int op, Operation opn1, Operation opn2, Operation result)
+shared_ptr<CodeNode> generate_code_node(int kind, Operation opn1, Operation opn2, Operation result)
 {
     shared_ptr<CodeNode> h(new CodeNode());
-    h->op = op;
+    h->kind = kind;
     h->opn1 = opn1;
     h->opn2 = opn2;
     h->result = result;
-    h->next = h->prior = h;
+    h->next = h->prev = h;
     return h;
 }
 
 shared_ptr<CodeNode> generate_label(const string &label)
 {
     shared_ptr<CodeNode> h(new CodeNode());
-    h->op = LABEL;
+    h->kind = LABEL;
     h->result.data = label;
-    h->next = h->prior = h;
+    h->next = h->prev = h;
     return h;
 }
 
 shared_ptr<CodeNode> generate_goto(const string &label)
 {
     shared_ptr<CodeNode> h(new CodeNode());
-    h->op = GOTO;
+    h->kind = GOTO;
     h->result.data = label;
-    h->next = h->prior = h;
+    h->next = h->prev = h;
     return h;
 }
 
@@ -66,12 +66,12 @@ shared_ptr<CodeNode> merge_code_node(const vector<shared_ptr<CodeNode>> &list)
             h1 = h2;
         else if (h2)
         {
-            shared_ptr<CodeNode> t1 = h1->prior;
-            shared_ptr<CodeNode> t2 = h2->prior;
+            shared_ptr<CodeNode> t1 = h1->prev;
+            shared_ptr<CodeNode> t2 = h2->prev;
             t1->next = h2;
             t2->next = h1;
-            h1->prior = t2;
-            h2->prior = t1;
+            h1->prev = t2;
+            h2->prev = t1;
         }
     }
     return h1;
@@ -218,7 +218,7 @@ void bool_expression(ASTNode *node)
         case RELOP:
         {
             Operation opn1, opn2, result;
-            int op = 0;
+            int kind = 0;
             expression(node->ptr[0]);
             expression(node->ptr[1]);
             opn1.kind = ID;
@@ -228,18 +228,18 @@ void bool_expression(ASTNode *node)
             result.kind = ID;
             result.data = node->Etrue;
             if (get<string>(node->data) == "<")
-                op = JLT;
+                kind = JLT;
             else if (get<string>(node->data) == "<=")
-                op = JLE;
+                kind = JLE;
             else if (get<string>(node->data) == ">")
-                op = JGT;
+                kind = JGT;
             else if (get<string>(node->data) == ">=")
-                op = JGE;
+                kind = JGE;
             else if (get<string>(node->data) == "==")
-                op = EQ;
+                kind = EQ;
             else if (get<string>(node->data) == "!=")
-                op = NEQ;
-            node->code = generate_code_node(op, opn1, opn2, result);
+                kind = NEQ;
+            node->code = generate_code_node(kind, opn1, opn2, result);
             node->code->data.push_back(generate_goto(node->Efalse));
             node->code = merge_code_node({node->ptr[0]->code,
                                           node->ptr[1]->code,

@@ -49,10 +49,10 @@ public:
 class CodeNode
 {
 public:
-    int op;
+    int kind;
     vector<shared_ptr<CodeNode>> data;
     Operation opn1, opn2, result;
-    shared_ptr<CodeNode> next, prior;
+    shared_ptr<CodeNode> next, prev;
 
     CodeNode();
 };
