@@ -308,7 +308,7 @@ void print_llvm_ir(shared_ptr<CodeNode> head)
         {
             Value *val = nullptr;
 
-            if (l_type != r_type) 
+            if (l_type != r_type)
             {
                 throw std::runtime_error("inconsistency float and int type.");
             }
@@ -371,9 +371,10 @@ void print_llvm_ir(shared_ptr<CodeNode> head)
         cur = cur->next;
     } while (cur != head);
 
-#if PRINT_LLVM_IR == 1
-    TheModule.print(errs(), nullptr);
-#endif
+    if constexpr (PRINT_LLVM_IR == 1)
+    {
+        TheModule.print(errs(), nullptr);
+    }
     verifyModule(TheModule, &(errs()));
 
     std::unique_ptr<Module> ptr(&TheModule);
