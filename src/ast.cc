@@ -30,9 +30,10 @@ ASTNode *make_node(int kind, int pos, vector<ASTNode *> nodes)
 
 void print_ast_node(ASTNode *node, int indent)
 {
-#if PRINT_AST == 0
-    return;
-#endif
+    if constexpr (PRINT_AST == 0)
+    {
+        return;
+    }
 
     if (node)
     {
@@ -190,10 +191,15 @@ void print_ast_node(ASTNode *node, int indent)
         case STAR:
         case DIV:
         case MOD:
-            printf("%*c%s\n", indent, ' ', get<string>(node->data).c_str());
+        {
+            if (node->data.index() == 2)
+            {
+                printf("%*c%s\n", indent, ' ', get<string>(node->data).c_str());
+            }
             print_ast_node(node->ptr[0], indent + 2);
             print_ast_node(node->ptr[1], indent + 2);
             break;
+        }
         case NOT:
         case UMINUS:
             printf("%*c%s\n", indent, ' ', get<string>(node->data).c_str());
@@ -205,9 +211,10 @@ void print_ast_node(ASTNode *node, int indent)
 
 void print_symbol_table()
 {
-#if PRINT_SYMBOL_TABLE == 0
-    return;
-#endif
+    if constexpr (PRINT_SYMBOL_TABLE == 0)
+    {
+        return;
+    }
 
     printf("%9s %9s %9s %9s %9s\n", "Name", "Alias", "Level", "Type", "Flag");
     for (int i = 0; i < symbol_table.size(); i++)

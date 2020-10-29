@@ -31,9 +31,9 @@ using namespace llvm;
 using std::get, std::nullopt;
 using std::string, std::unordered_map, std::vector, std::variant, std::shared_ptr, std::tuple, std::optional;
 
-#define PRINT_AST 0
-#define PRINT_SYMBOL_TABLE 0
-#define PRINT_LLVM_IR 1
+constexpr bool PRINT_AST = false;
+constexpr bool PRINT_SYMBOL_TABLE = false;
+constexpr bool PRINT_LLVM_IR = true;
 
 class Operation
 {
