@@ -2,11 +2,7 @@
 #include "parser.tab.h"
 
 Operation::Operation() : data(0), kind(0), type(0), level(0) {}
-CodeNode::CodeNode() : kind(0), next(nullptr), prev(nullptr) {}
-ASTNode::ASTNode() : kind(0), ptr(4, nullptr), idx(0), type(0), pos(0), num(0), code(nullptr) {}
-Symbol::Symbol() : level(0), type(0), paramnum(0), flag(0), idx(0) {}
-
-extern vector<Symbol> symbol_table;
+ASTNode::ASTNode() : kind(0), ptr(4, nullptr), idx(0), type(0), pos(0), num(0) {}
 
 ASTNode *make_node(int kind, int pos, vector<ASTNode *> nodes)
 {
@@ -209,17 +205,7 @@ void print_ast_node(ASTNode *node, int indent)
     }
 }
 
-void print_symbol_table()
+void entrypoint(ASTNode *node)
 {
-    if constexpr (PRINT_SYMBOL_TABLE == 0)
-    {
-        return;
-    }
-
-    printf("%9s %9s %9s %9s %9s\n", "Name", "Alias", "Level", "Type", "Flag");
-    for (int i = 0; i < symbol_table.size(); i++)
-        printf("%9s %9s %9d %9s %9c\n", symbol_table[i].name.c_str(),
-               symbol_table[i].alias.c_str(), symbol_table[i].level,
-               symbol_table[i].type == INT ? "int" : "float", symbol_table[i].flag);
-    printf("\n\n");
+    
 }
