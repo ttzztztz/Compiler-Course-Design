@@ -376,9 +376,4 @@ void print_llvm_ir(shared_ptr<CodeNode> head)
         TheModule.print(errs(), nullptr);
     }
     verifyModule(TheModule, &(errs()));
-
-    std::unique_ptr<Module> ptr(&TheModule);
-    ExecutionEngine *engine = EngineBuilder(std::move(ptr)).create();
-    engine->finalizeObject();
-    engine->runFunction(function_table["main"].first, {});
 }
