@@ -32,8 +32,7 @@ using std::get, std::nullopt;
 using std::string, std::unordered_map, std::vector, std::variant, std::shared_ptr, std::tuple, std::optional;
 
 constexpr bool PRINT_AST = false;
-constexpr bool PRINT_SYMBOL_TABLE = false;
-constexpr bool PRINT_LLVM_IR = true;
+constexpr bool PRINT_SYMBOL_TABLE = true;
 
 class Operation
 {
@@ -46,17 +45,6 @@ public:
     Operation();
 };
 
-class CodeNode
-{
-public:
-    int kind;
-    vector<shared_ptr<CodeNode>> data;
-    Operation opn1, opn2, result;
-    shared_ptr<CodeNode> next, prev;
-
-    CodeNode();
-};
-
 class ASTNode
 {
 public:
@@ -65,7 +53,6 @@ public:
     vector<ASTNode *> ptr;
     int idx;
     string Etrue, Efalse, Snext;
-    shared_ptr<CodeNode> code;
     int type;
     int pos;
     int num;
@@ -91,7 +78,5 @@ ASTNode *make_node(int kind, int pos, vector<ASTNode *> nodes = vector<ASTNode *
 void entrypoint(ASTNode *node);
 void bool_expression(ASTNode *node);
 void expression(ASTNode *node);
-void print_llvm_ir(shared_ptr<CodeNode> head);
 optional<Symbol> search_symbol_table_with_flag(const string &name, char flag);
-tuple<Function *, FunctionType *, Function *, FunctionType *> inject_print_function(LLVMContext &ctx, IRBuilder<> &builder, Module &module);
 void print_symbol_table();
