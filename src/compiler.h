@@ -93,5 +93,5 @@ void bool_expression(ASTNode *node);
 void expression(ASTNode *node);
 void print_llvm_ir(shared_ptr<CodeNode> head);
 optional<Symbol> search_symbol_table_with_flag(const string &name, char flag);
-tuple<Function *, FunctionType *, Function *, FunctionType *> inject_print_function(LLVMContext &ctx, IRBuilder<> &builder, Module &module);
+tuple<Function *, FunctionType *, Function *, FunctionType *> inject_print_function(LLVMContext &ctx, IRBuilder<> &builder, Module &_module);
 void print_symbol_table();
