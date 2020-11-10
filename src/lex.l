@@ -20,38 +20,38 @@ int    [0-9]+
 float  ([0-9]*\.[0-9]+)|([0-9]+\.)
 
 %%
-{int}        {yylval.type_int = atoi(yytext); return INT;}
-{float}      {yylval.type_float = atof(yytext); return FLOAT;}
-"int"        {strcpy(yylval.type_id, yytext);return TYPE;}
-"float"      {strcpy(yylval.type_id, yytext);return TYPE;}
-"i32"        {strcpy(yylval.type_id, "int");return TYPE;}
-"f32"        {strcpy(yylval.type_id, "float");return TYPE;}
+{int}        {yylval.type_int = atoi(yytext); printf("(int, %s) ", yytext); return INT;}
+{float}      {yylval.type_float = atof(yytext); printf("(float, %s) ", yytext); return FLOAT;}
+"int"        {strcpy(yylval.type_id, yytext); printf("(type, int) "); return TYPE;}
+"float"      {strcpy(yylval.type_id, yytext);printf("(type, float) "); return TYPE;}
+"i32"        {strcpy(yylval.type_id, "int");printf("(type, int) "); return TYPE;}
+"f32"        {strcpy(yylval.type_id, "float");printf("(type, float) "); return TYPE;}
 
-"return"     {return RETURN;}
-"if"         {return IF;}
-"else"       {return ELSE;}
-"while"      {return WHILE;}
-"continue"	 {return CONTINUE;}
-"break"		 {return BREAK;}
+"return"     {printf("(token, return) "); return RETURN;}
+"if"         {printf("(token, if) "); return IF;}
+"else"       {printf("(token, else) "); return ELSE;}
+"while"      {printf("(token, while) "); return WHILE;}
+"continue"	 {printf("(token, continue) "); return CONTINUE;}
+"break"		 {printf("(token, break) "); return BREAK;}
 
-{id}        {strcpy(yylval.type_id, yytext); return ID;}
-";"			{return SEMI;}
-","			{return COMMA;}
-">"|"<"|">="|"<="|"=="|"!=" {strcpy(yylval.type_id, yytext);;return RELOP;}
-"="			{return ASSIGNOP;}
-"+"			{return PLUS;}
-"-"			{return MINUS;}
-"*"			{return STAR;}
-"%"			{return MOD;}
-"/"			{return DIV;}
-"&&"        {return AND;}
-"||"        {return OR;}
-"!"			{return NOT;}
-"("			{return LP;}
-")"			{return RP;}
-"{"			{return LC;}
-"}"			{return RC;}
-[\n]        {yycolumn=1;}   
+{id}        {printf("(id, %s) ", yytext); strcpy(yylval.type_id, yytext); return ID;}
+";"			{printf("(token, semi) "); return SEMI;}
+","			{printf("(token, comma) "); return COMMA;}
+">"|"<"|">="|"<="|"=="|"!=" {printf("(token, cmp_operator) "); strcpy(yylval.type_id, yytext);;return RELOP;}
+"="			{printf("(token, =) "); return ASSIGNOP;}
+"+"			{printf("(token, +) "); return PLUS;}
+"-"			{printf("(token, -) "); return MINUS;}
+"*"			{printf("(token, *) "); return STAR;}
+"%"			{printf("(token, %) "); return MOD;}
+"/"			{printf("(token, /) "); return DIV;}
+"&&"        {printf("(token, &&) "); return AND;}
+"||"        {printf("(token, ||) "); return OR;}
+"!"			{printf("(token, !) "); return NOT;}
+"("			{printf("(token, () "); return LP;}
+")"			{printf("(token, )) "); return RP;}
+"{"			{printf("(token,{) "); return LC;}
+"}"			{printf("(token, }) "); return RC;}
+[\n]        {printf("(token, \\n) "); yycolumn=1;}   
 [ \r\t]     {}
 .			{printf("Error type A :Mysterious character \"%s\"\n\t at Line %d\n", yytext, yylineno);}
 %%
