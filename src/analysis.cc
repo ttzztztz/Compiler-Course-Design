@@ -783,6 +783,7 @@ void semantic_analysis(ASTNode *node, const string &function_name = "")
 
 void entrypoint(ASTNode *node)
 {
+    printf("\n");
     semantic_stack.clear();
 
     fill_symbol_table("print_int", "", 0, INT, 'F');

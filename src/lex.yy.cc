@@ -1,5 +1,5 @@
 
-#line 3 "lex.yy.c"
+#line 2 "lex.yy.c"
 
 #define  YY_INT_ALIGNED short int
 
@@ -531,8 +531,8 @@ typedef union {
 	struct node *ptr;
 } YYLVAL;
 #define YYSTYPE YYLVAL
+#line 534 "lex.yy.c"
 #line 535 "lex.yy.c"
-#line 536 "lex.yy.c"
 
 #define INITIAL 0
 
@@ -751,7 +751,7 @@ YY_DECL
 	{
 #line 22 "./lex.l"
 
-#line 755 "lex.yy.c"
+#line 754 "lex.yy.c"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -821,158 +821,158 @@ do_action:	/* This label is used only to access EOF actions. */
 case 1:
 YY_RULE_SETUP
 #line 23 "./lex.l"
-{yylval.type_int = atoi(yytext); return INT;}
+{yylval.type_int = atoi(yytext); printf("(int, %s) ", yytext); return INT;}
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
 #line 24 "./lex.l"
-{yylval.type_float = atof(yytext); return FLOAT;}
+{yylval.type_float = atof(yytext); printf("(float, %s) ", yytext); return FLOAT;}
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
 #line 25 "./lex.l"
-{strcpy(yylval.type_id, yytext);return TYPE;}
+{strcpy(yylval.type_id, yytext); printf("(type, int) "); return TYPE;}
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
 #line 26 "./lex.l"
-{strcpy(yylval.type_id, yytext);return TYPE;}
+{strcpy(yylval.type_id, yytext);printf("(type, float) "); return TYPE;}
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
 #line 27 "./lex.l"
-{strcpy(yylval.type_id, "int");return TYPE;}
+{strcpy(yylval.type_id, "int");printf("(type, int) "); return TYPE;}
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
 #line 28 "./lex.l"
-{strcpy(yylval.type_id, "float");return TYPE;}
+{strcpy(yylval.type_id, "float");printf("(type, float) "); return TYPE;}
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
 #line 30 "./lex.l"
-{return RETURN;}
+{printf("(token, return) "); return RETURN;}
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
 #line 31 "./lex.l"
-{return IF;}
+{printf("(token, if) "); return IF;}
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
 #line 32 "./lex.l"
-{return ELSE;}
+{printf("(token, else) "); return ELSE;}
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
 #line 33 "./lex.l"
-{return WHILE;}
+{printf("(token, while) "); return WHILE;}
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
 #line 34 "./lex.l"
-{return CONTINUE;}
+{printf("(token, continue) "); return CONTINUE;}
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
 #line 35 "./lex.l"
-{return BREAK;}
+{printf("(token, break) "); return BREAK;}
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
 #line 37 "./lex.l"
-{strcpy(yylval.type_id, yytext); return ID;}
+{printf("(id, %s) ", yytext); strcpy(yylval.type_id, yytext); return ID;}
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
 #line 38 "./lex.l"
-{return SEMI;}
+{printf("(token, semi) "); return SEMI;}
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
 #line 39 "./lex.l"
-{return COMMA;}
+{printf("(token, comma) "); return COMMA;}
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
 #line 40 "./lex.l"
-{strcpy(yylval.type_id, yytext);;return RELOP;}
+{printf("(token, cmp_operator) "); strcpy(yylval.type_id, yytext);;return RELOP;}
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
 #line 41 "./lex.l"
-{return ASSIGNOP;}
+{printf("(token, =) "); return ASSIGNOP;}
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
 #line 42 "./lex.l"
-{return PLUS;}
+{printf("(token, +) "); return PLUS;}
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
 #line 43 "./lex.l"
-{return MINUS;}
+{printf("(token, -) "); return MINUS;}
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
 #line 44 "./lex.l"
-{return STAR;}
+{printf("(token, *) "); return STAR;}
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
 #line 45 "./lex.l"
-{return MOD;}
+{printf("(token, %) "); return MOD;}
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
 #line 46 "./lex.l"
-{return DIV;}
+{printf("(token, /) "); return DIV;}
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
 #line 47 "./lex.l"
-{return AND;}
+{printf("(token, &&) "); return AND;}
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
 #line 48 "./lex.l"
-{return OR;}
+{printf("(token, ||) "); return OR;}
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
 #line 49 "./lex.l"
-{return NOT;}
+{printf("(token, !) "); return NOT;}
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
 #line 50 "./lex.l"
-{return LP;}
+{printf("(token, () "); return LP;}
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
 #line 51 "./lex.l"
-{return RP;}
+{printf("(token, )) "); return RP;}
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
 #line 52 "./lex.l"
-{return LC;}
+{printf("(token,{) "); return LC;}
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
 #line 53 "./lex.l"
-{return RC;}
+{printf("(token, }) "); return RC;}
 	YY_BREAK
 case 30:
 /* rule 30 can match eol */
 YY_RULE_SETUP
 #line 54 "./lex.l"
-{yycolumn=1;}   
+{printf("(token, \\n) "); yycolumn=1;}   
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
 #line 55 "./lex.l"
-{}   
+{}
 	YY_BREAK
 case 32:
 YY_RULE_SETUP
@@ -984,7 +984,7 @@ YY_RULE_SETUP
 #line 57 "./lex.l"
 ECHO;
 	YY_BREAK
-#line 988 "lex.yy.c"
+#line 987 "lex.yy.c"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
